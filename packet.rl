@@ -33,15 +33,9 @@
     payload = OCTET*;
     crc = OCTET{2};
     endflag = "~";
-    header = (startflag %notify_startflag)
-             (command %notify_command)
-             (payloadlength >payloadlength_start @payloadlength_received);
-#    packet = (startflag %notify_startflag
-#              command %notify_command
-#              payloadlength %notify_payloadlength
-#              payload %notify_payload
-#              crc? %notify_crc
-#              endflag %notify_endflag);
+
+    header = (command @command_received)
+             (payloadlength >payloadlength_start);
 
     process_payload := (
         payload >payload_start $payload_byte_received
@@ -49,6 +43,8 @@
 
     # instantiate machine rules
     main := (
-        header $err(packet_err) # @{ fcall process_payload; }
+        (startflag %startflag_received)
+        (header $err(packet_err) @{ fcall process_payload; })
+        (endflag %endflag_received)
     );
 }%%

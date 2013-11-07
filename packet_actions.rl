@@ -2,20 +2,29 @@
 
 machine packet_grammar;
 
-action notify_startflag { cout << "got startflag: " << *(p - 1) << endl; }
-action notify_command { cout << "got command: " << *(p - 1) << endl; }
-action notify_crc { cout << "got crc: " << *(p - 1) << endl; }
-action notify_endflag { cout << "got endflag: " << *(p - 1) << endl; }
-action packet_err {
-    cout << "parse error at byte[" << (p - start) << "]: "
-         << (unsigned char)(*(p - 1)) << endl;
+action startflag_received {
+    // We're starting to process a new packet, so reset completed status.
+    this->packet_completed_ = false;
 }
 
-action notify_payloadlength { cout << "got payloadlength: " << *(p - 1) << endl; }
+action command_received {
+    this->command_ = *p;
+}
 
+action endflag_received {
+    if (this->payload_length_ == this->payload_bytes_received_) {
+        /* We've received an entire packet with the expected payload size, so
+         * update the completed status accordingly. */
+        this->packet_completed_ = true;
+    }
+}
+
+action packet_err {
+    cout << "parse error near byte[" << (p - start) << "]: "
+         << std::string((char *)start, (p - start) + 1) << endl;
+}
 
 action payloadlength_start {
-    cout << "start payloadlength" << endl;
     // Reset received-bytes counter.
     this->payload_length_ = 0;
 }
@@ -44,22 +53,19 @@ action payloadlength_single {
     this->payload_length_ = (int)(*p);
 }
 
-action payloadlength_received {
-    cout << "payloadlength: " << this->payload_length_ << endl;
-}
-
 action payload_start {
-    cout << "start payload" << endl;
     // Reset received-bytes counter.
     this->payload_bytes_received_ = 0;
 }
 
 action payload_byte_received {
-    cout << "received payload byte #" << ++(this->payload_bytes_received_)
-         << endl;
+    /* We received another payload octet, so increment received count and check
+     * if we've received all expected octets. */
+    if (++this->payload_bytes_received_ == this->payload_length_) {
+        /* We've received the expected number of payload octets */
+        fret;
+    }
 }
-
-action notify_payload { cout << "got payload: " << *(p - 1) << endl; }
 
 include "packet.rl";
 
@@ -67,6 +73,7 @@ include "packet.rl";
 
 
 #include <iostream>
+#include <string>
 #include <stdio.h>
 #include <string.h>
 #include "PacketParser.hpp"
@@ -74,11 +81,11 @@ using namespace std;
 
 %% write data;
 
-int PacketParser::parse(char* string)
-{
+bool PacketParser::parse(char* string, uint8_t &command) {
   int cs;
-  int res=0;
   unsigned char *start, *p, *pe, *eof;
+  int stack[4];
+  int top;
 
   start = (unsigned char *)string;
   p = (unsigned char *)start;
@@ -88,5 +95,10 @@ int PacketParser::parse(char* string)
   %% write init;
   %% write exec;
 
-  return res;
+  if (!this->packet_completed_) {
+    this->command_ = 0x00;
+  }
+  command = this->command_;
+
+  return this->packet_completed_;
 }

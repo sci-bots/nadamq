@@ -16,6 +16,10 @@ action endflag_received {
         /* We've received an entire packet with the expected payload size, so
          * update the completed status accordingly. */
         this->packet_completed_ = true;
+        if ((crc_start != NULL) && (p - crc_start) == 2) {
+            /* A CRC was included in the packet. */
+            packet->has_crc_ = true;
+        }
     }
 }
 
@@ -26,7 +30,7 @@ action packet_err {
      * methods using them when targeting AVR architectures.
      * */
 
-    cout << "parse error near byte[" << (p - start) << "]: "
+    cerr << "parse error near byte[" << (p - start) << "]: "
          << std::string((char *)start, (p - start) + 1) << endl;
 #endif // ifndef AVR
 }
@@ -67,12 +71,25 @@ action payload_start {
 }
 
 action payload_byte_received {
-    /* We received another payload octet, so increment received count and check
-     * if we've received all expected octets. */
+    /* We received another payload octet, so:
+     *
+     *   - Update CRC checksum.
+     *   - Increment received count.
+     *   - Check if we've received all expected octets. */
+    crc = update_crc(crc, *p);
     if (++this->payload_bytes_received_ == packet->payload_length_) {
-        /* We've received the expected number of payload octets */
+        /* We've received the expected number of payload octets. */
         fret;
     }
+}
+
+action crc_start {
+    crc_start = p;
+    packet->crc_ = (*p) << 8;
+}
+
+action crc_received {
+    packet->crc_ += *p;
 }
 
 include "packet.rl";
@@ -109,8 +126,15 @@ bool PacketParser::parse(char* buffer, uint16_t buffer_len, Packet *packet) {
      */
     int cs;
     unsigned char *start, *p, *pe, *eof;
+    unsigned char *crc_start = NULL;
     int stack[4];
     int top;
+
+    /* Initialize value of CRC checksum, which is updated using the
+     * `update_crc` method. */
+    //uint16_t crc = 0xFFFF;
+    uint16_t &crc = this->crc_;
+    crc = crc_init();
 
     start = (unsigned char *)buffer;
     p = (unsigned char *)start;
@@ -120,9 +144,32 @@ bool PacketParser::parse(char* buffer, uint16_t buffer_len, Packet *packet) {
     %% write init;
     %% write exec;
 
+    crc = crc_finalize(crc);
+
+    if (packet->has_crc_ && (packet->crc_ != crc)) {
+        /* Packet parse was not completed successfully, due to either:
+         *
+         *   - A parsing error.
+         *   - A CRC checksum mismatch.
+         */
+        this->packet_completed_ = false;
+        cerr << "[CRC mismatch] " << endl
+             << "  reported: " << packet->crc_ << endl
+             << "  computed: " << crc << endl;
+    }
+
     if (!this->packet_completed_) {
-    packet->command_ = 0x00;
+        packet->command_ = 0x00;
     }
 
     return this->packet_completed_;
+}
+
+uint16_t update_crc(uint16_t crc, uint8_t data) {
+#ifdef AVR
+    crc = _crc16_update(crc, data);
+#else
+    crc = crc_update_byte(crc, data);
+#endif
+    return crc;
 }

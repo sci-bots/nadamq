@@ -4,6 +4,7 @@ import numpy as np
 
 
 ctypedef unsigned char uchar
+ctypedef uint16_t crc_t
 
 
 cdef extern from "PacketParser.hpp":
@@ -11,6 +12,8 @@ cdef extern from "PacketParser.hpp":
         uchar command_
         uint16_t payload_length_
         uchar *payload_buffer_
+        bint has_crc_
+        uint16_t crc_
 
         Packet()
         Packet(uchar *payload_buffer, uint16_t payload_length)
@@ -19,9 +22,17 @@ cdef extern from "PacketParser.hpp":
     cdef cppclass PacketParser:
         int payload_bytes_received_
         bint packet_completed_
+        uint16_t crc_
 
         PacketParser()
         bint parse(char *buffer, uint16_t buffer_length, Packet *packet)
+
+
+cdef extern from "crc-16.h":
+    crc_t c_crc_init "crc_init" ()
+    crc_t c_crc_finalize "crc_finalize" (crc_t crc)
+    crc_t c_crc_update "crc_update" (crc_t crc, uchar *data, size_t data_len)
+    crc_t c_crc_update_byte "crc_update_byte" (crc_t crc, uchar data)
 
 
 cdef class cPacket:
@@ -38,6 +49,20 @@ cdef class cPacket:
 
     def data_ptr(self):
         return <size_t>self.thisptr.payload_buffer_
+
+    property has_crc:
+        def __get__(self):
+            return self.thisptr.has_crc_
+
+    property crc:
+        def __get__(self):
+            if not self.thisptr.has_crc_:
+                raise RuntimeError, 'Packet has no CRC'
+            return self.thisptr.crc_
+
+    property command:
+        def __get__(self):
+            return self.thisptr.command_
 
 
 cdef class cPacketParser:
@@ -58,3 +83,30 @@ cdef class cPacketParser:
             return packet
         raise RuntimeError, ('Error parsing packet: %s' %
                              np.asarray(packet_buffer).tostring())
+
+    property crc:
+        def __get__(self):
+            return self.thisptr.crc_
+
+
+def crc_init():
+    return c_crc_init()
+
+
+def crc_finalize(crc):
+    return c_crc_finalize(crc)
+
+
+def crc_update(uint16_t crc, uchar [:] data):
+    return c_crc_update(crc, &data[0], len(data))
+
+
+def crc_update_byte(uint16_t crc, uchar octet):
+    return c_crc_update_byte(crc, octet)
+
+
+def compute_crc16(data):
+    cdef string data_ = data
+    cdef uint16_t crc = crc_init()
+    crc = c_crc_update(crc, <uchar *>data_.c_str(), len(data))
+    return crc_finalize(crc)

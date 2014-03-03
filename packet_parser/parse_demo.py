@@ -4,16 +4,13 @@ import numpy as np
 from PacketParser import cPacketParser, compute_crc16
 
 
-def main():
-    args = parse_args()
+def parse_demo(command_byte, payload):
     parser = cPacketParser()
-
     cre_command_byte = re.compile(r'0x[0-9a-fA-F]{2}')
-    match = cre_command_byte.match(args.command_byte)
+    match = cre_command_byte.match(command_byte)
     if match is None:
-        raise ValueError, 'Invalid command byte: %s' % args.command_byte
-    command = chr(eval(args.command_byte))
-    payload = args.payload
+        raise ValueError, 'Invalid command byte: %s' % command_byte
+    command = chr(eval(command_byte))
     crc = compute_crc16(payload)
 
     # Construct packet from:
@@ -30,6 +27,13 @@ def main():
         print 'CRC matched: %s' % hex(packet.crc)
     except RuntimeError:
         pass
+    return packet
+
+
+def main():
+    args = parse_args()
+
+    parse_demo(args.command_byte, args.payload)
 
 
 def parse_args():

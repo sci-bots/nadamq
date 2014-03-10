@@ -27,49 +27,172 @@ using namespace std;
 class Packet {
 public:
     uint8_t command_;
-    uint8_t *payload_buffer_;
     uint16_t payload_length_;
+    uint16_t buffer_size_;
+    uint8_t *payload_buffer_;
     bool has_crc_;
     uint16_t crc_;
 
-    Packet() : command_(0), payload_length_(0), payload_buffer_(NULL),
-               has_crc_(false), crc_(0xFFFF) {}
+    Packet() : command_(0), payload_length_(0), buffer_size_(0),
+               payload_buffer_(NULL), has_crc_(false), crc_(0xFFFF) {}
 
-    void reset(uint8_t *payload_buffer, uint16_t payload_length) {
-        this->payload_buffer_ = payload_buffer;
-        this->payload_length_ = payload_length;
-        this->has_crc_ = false;
-        this->crc_ = 0xFFFF;
+    void reset() {
+      /* Reset state of packet.
+       *
+       * __NB__ This method _does not_ deallocate the buffer. */
+      payload_length_ = 0;
+      has_crc_ = false;
+      crc_ = 0xFFFF;
+    }
+
+    void reallocate_buffer(uint16_t buffer_size, bool shrink=false) {
+      /* Reallocate memory for payload buffer based on specified target size.
+       *
+       * __NB__ If the size of the buffer is greater than the target size, do
+       * nothing, unless `shrink=true`.  If `shrink=true`, shrink the buffer to
+       * the target size.  By not shrinking the buffer by default, we can avoid
+       * cycles of allocation/deallocation for many consecutive re-allocations,
+       * at the expense of some potentially wasted memory remaining allocated
+       * between invocations. */
+      if ((buffer_size_ < buffer_size) || (shrink && (buffer_size_ >
+                                                      buffer_size))) {
+        deallocate_buffer();
+        payload_buffer_ = static_cast<uint8_t *>(calloc(buffer_size,
+                                                        sizeof(uint8_t)));
+        if (payload_buffer_ != NULL) {
+          buffer_size_ = buffer_size;
+        }
+      }
+    }
+
+    void deallocate_buffer() {
+      if (payload_buffer_ != NULL) {
+        free(payload_buffer_);
+        buffer_size_ = 0;
+      }
+    }
+
+    ~Packet() {
+      deallocate_buffer();
     }
 
 #ifndef AVR
-    /*
-     * Assume STL libraries are not available on AVR devices, so don't include
-     * methods using them when targeting AVR architectures.
-     * */
-    string data() const {
-        if (this->payload_buffer_ != NULL) {
-            return std::string((char *)this->payload_buffer_,
-                               this->payload_length_);
-        } else {
-            throw std::runtime_error("No buffer has been set/allocated.");
-        }
+  /*
+   * Assume STL libraries are not available on AVR devices, so don't include
+   * methods using them when targeting AVR architectures.
+   * */
+  string data() const {
+    if (this->payload_buffer_ != NULL) {
+      return std::string((char *)this->payload_buffer_,
+                         this->payload_length_);
+    } else {
+      throw std::runtime_error("No buffer has been set/allocated.");
     }
-#endif // ifndef AVR
+  }
+#endif  // ifndef AVR
 };
 
 
 uint16_t update_crc(uint16_t crc, uint8_t data);
 
 
-class PacketParser {
+class Parser {
 public:
-    int payload_bytes_received_;
-    bool packet_completed_;
-    uint16_t crc_;
+  bool message_completed_;
+  bool parse_error_;
 
-    PacketParser() : payload_bytes_received_(0), packet_completed_(false) {}
-    bool parse(char* buffer, uint16_t buffer_len, Packet *packet);
+protected:
+  int cs;
+  uint8_t *p, *pe;
+  uint8_t *eof;
+  uint8_t *start;
+
+public:
+  Parser() : message_completed_(false), parse_error_(false) {}
+
+  int state() const { return cs; }
+
+  void reset();
+
+  void parse_byte(uint8_t *byte);
+};
+
+
+class PacketParser : public Parser {
+public:
+  typedef Parser base_type;
+
+  int payload_bytes_expected_;
+  int payload_bytes_received_;
+  bool message_completed_;
+  bool parse_error_;
+  uint16_t crc_;
+
+protected:
+  int stack[4];
+  int top;
+  Packet *packet_;
+  int crc_byte_count_;
+
+  using base_type::cs;
+  using base_type::p;
+  using base_type::pe;
+  using base_type::eof;
+  using base_type::start;
+
+public:
+  using base_type::state;
+
+  PacketParser() : base_type(), payload_bytes_expected_(0),
+                   payload_bytes_received_(0), crc_(0), packet_(NULL),
+                   crc_byte_count_(0) {}
+
+  void reset(Packet *packet);
+
+  void parse_byte(uint8_t *byte);
+
+  template <typename Stream>
+  int8_t parse(Stream &stream, Packet &packet) {
+    /* Return codes
+     * ============
+     *
+     *  - `0`: No error, but packet was not completed in this pass.
+     *  - `1`: Packet parsing was completed successfully in this pass.
+     *  - `-1`: Parse error was encountered in this pass. */
+    uint16_t &crc = crc_;
+
+    if (stream.available() > 0) {
+      /* Read next available byte from stream. */
+      uint8_t byte = stream.read();
+
+      /* Process byte using Ragel parser. */
+      parse_byte(&byte);
+    }
+
+    if (parse_error_) {
+      return -1;
+    } else if (message_completed_) {
+      /* Trigger end-of-file actions. */
+      parse_byte(NULL);
+      crc_ = crc_finalize(crc_);
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
+  bool verified() {
+    /* Packet parse should fail verification if the packet contained a CRC
+     * checksum and it did not match the checksum computed from scratch, due to
+     * either:
+     *
+     *   - A parsing error.
+     *   - A CRC checksum mismatch.
+     */
+    return (!packet_->has_crc_ || (packet_->has_crc_ && (packet_->crc_ !=
+                                                         crc_)));
+  }
+
 };
 
 #endif

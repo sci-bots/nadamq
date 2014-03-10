@@ -1,5 +1,8 @@
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t
+
+import re
+
 import numpy as np
 
 
@@ -11,21 +14,24 @@ cdef extern from "PacketParser.hpp":
     cdef cppclass Packet:
         uchar command_
         uint16_t payload_length_
+        uint16_t buffer_size_
         uchar *payload_buffer_
         bint has_crc_
         uint16_t crc_
 
         Packet()
-        Packet(uchar *payload_buffer, uint16_t payload_length)
         string data() except +
 
     cdef cppclass PacketParser:
         int payload_bytes_received_
-        bint packet_completed_
+        int payload_bytes_expected_
+        bint message_completed_
+        bint parse_error_
         uint16_t crc_
 
         PacketParser()
-        bint parse(char *buffer, uint16_t buffer_length, Packet *packet)
+        void parse_byte(uchar *byte)
+        void reset(Packet *packet)
 
 
 cdef extern from "crc-16.h":
@@ -76,13 +82,16 @@ cdef class cPacketParser:
 
     def parse(self, uchar [:] packet_buffer):
         packet = cPacket()
-        cdef bint result = self.thisptr.parse(<char *>&packet_buffer[0],
-                                              len(packet_buffer),
-                                              packet.thisptr)
-        if result:
-            return packet
-        raise RuntimeError, ('Error parsing packet: %s' %
-                             np.asarray(packet_buffer).tostring())
+        self.thisptr.reset(packet.thisptr)
+        cdef int i
+        for i in xrange(len(packet_buffer)):
+            self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
+            error = self.thisptr.parse_error_
+            if error:
+                self.thisptr.reset(packet.thisptr)
+                raise RuntimeError, ('Error parsing packet: %s' %
+                                     np.asarray(packet_buffer).tostring())
+        return packet
 
     property crc:
         def __get__(self):
@@ -110,3 +119,25 @@ def compute_crc16(data):
     cdef uint16_t crc = crc_init()
     crc = c_crc_update(crc, <uchar *>data_.c_str(), len(data))
     return crc_finalize(crc)
+
+
+def get_packet_data(command_byte, payload, crc_checksum=False):
+    cre_command_byte = re.compile(r'0x[0-9a-fA-F]{2}')
+    match = cre_command_byte.match(command_byte)
+    if match is None:
+        raise ValueError, 'Invalid command byte: %s' % command_byte
+    command = chr(eval(command_byte))
+
+    if crc_checksum:
+        crc = compute_crc16(payload)
+        packet_str = '~%s%s%s%s%s~' % (command, chr(len(payload)), payload,
+                                       chr((crc >> 8) & 0x0FF),
+                                       chr(crc & 0x0FF))
+    else:
+        packet_str = '~%s%s%s~' % (command, chr(len(payload)), payload)
+
+    # Construct packet from:
+    #   * Command octet
+    #   * Payload data
+    #   * CRC checksum [if enabled]
+    return np.fromstring(packet_str, dtype='uint8')

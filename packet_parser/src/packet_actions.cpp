@@ -1,7 +1,7 @@
 
 #line 1 "packet_actions.rl"
 
-#line 97 "packet_actions.rl"
+#line 142 "packet_actions.rl"
 
 
 #include <stdio.h>
@@ -9,13 +9,13 @@
 #include "PacketParser.hpp"
 
 
-#line 13 "packet_actions.c"
+#line 13 "packet_actions.cpp"
 static const char _packet_grammar_actions[] = {
 	0, 1, 0, 1, 1, 1, 2, 1, 
-	3, 1, 8, 1, 9, 1, 10, 1, 
-	11, 2, 4, 5, 2, 6, 12, 2, 
-	8, 9, 2, 10, 2, 3, 4, 7, 
-	12
+	3, 1, 9, 1, 10, 1, 12, 2, 
+	4, 11, 2, 5, 6, 2, 7, 13, 
+	2, 9, 10, 3, 4, 11, 2, 3, 
+	5, 8, 13
 };
 
 static const char _packet_grammar_key_offsets[] = {
@@ -49,13 +49,13 @@ static const char _packet_grammar_trans_targs[] = {
 };
 
 static const char _packet_grammar_trans_actions[] = {
-	1, 0, 3, 7, 17, 29, 26, 13, 
-	15, 5, 0, 20, 0, 15, 23, 11, 
+	1, 7, 3, 7, 18, 31, 27, 15, 
+	13, 5, 7, 21, 7, 13, 24, 11, 
 	0
 };
 
 static const char _packet_grammar_eof_actions[] = {
-	0, 0, 7, 7, 7, 0, 0, 7, 
+	0, 7, 7, 7, 7, 7, 7, 7, 
 	0, 0, 9, 0
 };
 
@@ -67,57 +67,63 @@ static const int packet_grammar_en_process_payload = 10;
 static const int packet_grammar_en_main = 1;
 
 
-#line 104 "packet_actions.rl"
+#line 149 "packet_actions.rl"
 
+void PacketParser::reset(Packet *packet) {
+  /*
+   * Attempt to parse a packet from a buffer with length `buffer_len`.
+   *
+   * If successful, return `true` and set:
+   *
+   *  - `packet.command_`
+   *  - `packet.payload_buffer_`
+   *  - `packet.payload_length_`
+   *
+   * __NB__ No data is copied from the input `buffer` to
+   * `packet.payload_buffer_`.  Instead, `packet.payload_buffer_` is set to
+   * the location in `bufffer` where the payload is found during parsing,
+   * while `packet.payload_length_` is set to the length of the
+   * payload.  This means that the pointer `packet.payload_buffer_` is only
+   * valid as long as `buffer` is valid.
+   *
+   * If unsuccessful, return `false`.  In the case of an unsuccessful parse
+   * attempt, the state of attributes the attributes of `packet` are
+   * _undefined_.
+   */
+  packet_ = packet;
+  packet_->reset();
+  crc_ = 0;
+  crc_byte_count_ = 0;
+  message_completed_ = false;
+  parse_error_ = false;
 
-bool PacketParser::parse(char* buffer, uint16_t buffer_len, Packet *packet) {
-    /*
-     * Attempt to parse a packet from a buffer with length `buffer_len`.
-     *
-     * If successful, return `true` and set:
-     *
-     *  - `packet.command_`
-     *  - `packet.payload_buffer_`
-     *  - `packet.payload_length_`
-     *
-     * __NB__ No data is copied from the input `buffer` to
-     * `packet.payload_buffer_`.  Instead, `packet.payload_buffer_` is set to
-     * the location in `bufffer` where the payload is found during parsing,
-     * while `packet.payload_length_` is set to the length of the
-     * payload.  This means that the pointer `packet.payload_buffer_` is only
-     * valid as long as `buffer` is valid.
-     *
-     * If unsuccessful, return `false`.  In the case of an unsuccessful parse
-     * attempt, the state of attributes the attributes of `packet` are
-     * _undefined_.
-     */
-    int cs;
-    unsigned char *start, *p, *pe, *eof;
-    unsigned char *crc_start = NULL;
-    int stack[4];
-    int top;
-
-    /* Initialize value of CRC checksum, which is updated using the
-     * `update_crc` method. */
-    //uint16_t crc = 0xFFFF;
-    uint16_t &crc = this->crc_;
-    crc = crc_init();
-
-    start = (unsigned char *)buffer;
-    p = (unsigned char *)start;
-    pe = (unsigned char *)(p + buffer_len);
-    eof = pe;
-
-    
-#line 113 "packet_actions.c"
+  
+#line 102 "packet_actions.cpp"
 	{
 	cs = packet_grammar_start;
 	top = 0;
 	}
 
-#line 145 "packet_actions.rl"
-    
-#line 121 "packet_actions.c"
+#line 179 "packet_actions.rl"
+}
+
+
+void PacketParser::parse_byte(uint8_t *byte) {
+  uint8_t dummy_byte;
+
+  if (byte == NULL) {
+    /* If no byte is available _(i.e., `NULL` byte pointer was provided)_, set
+     * Ragel parser pointers to trigger end-of-file actions. */
+    p = &dummy_byte;
+    pe = p;
+    eof = p;
+  } else {
+    p = byte;
+    pe = p + 1;
+  }
+
+  
+#line 127 "packet_actions.cpp"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -193,122 +199,169 @@ _match:
 	case 0:
 #line 5 "packet_actions.rl"
 	{
-    // We're starting to process a new packet, so reset completed status.
-    this->packet_completed_ = false;
+#ifdef VERBOSE_STATES
+  std::cout << "[startflag_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  // We're starting to process a new packet, so reset completed status.
+  message_completed_ = false;
 }
 	break;
 	case 1:
-#line 10 "packet_actions.rl"
+#line 13 "packet_actions.rl"
 	{
-    packet->command_ = *p;
+#ifdef VERBOSE_STATES
+  std::cout << "[command_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  packet_->command_ = *p;
 }
 	break;
 	case 2:
-#line 14 "packet_actions.rl"
+#line 20 "packet_actions.rl"
 	{
-    if (packet->payload_length_ == this->payload_bytes_received_) {
-        /* We've received an entire packet with the expected payload size, so
-         * update the completed status accordingly. */
-        this->packet_completed_ = true;
-        if ((crc_start != NULL) && (p - crc_start) == 2) {
-            /* A CRC was included in the packet. */
-            packet->has_crc_ = true;
-        }
+#ifdef VERBOSE_STATES
+  std::cout << "[endflag_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  uint16_t init_crc = crc_init();
+  if (crc_ == init_crc || crc_byte_count_ == 2) {
+    /* Either packet contains no CRC or we've received two CRC bytes. */
+    if (payload_bytes_expected_ == payload_bytes_received_) {
+      /* We've received an entire packet with the expected payload size, so
+       * update the completed status accordingly. */
+      message_completed_ = true;
+      if (crc_byte_count_ >= 2) {
+        /* A CRC was included in the packet. */
+        packet_->has_crc_ = true;
+      }
+      /* Update payload length, since we successfully parsed the packet. */
+      packet_->payload_length_ = payload_bytes_received_;
+    } else {
+      /* Reset state of packet, since the parsing was not successful. */
+      parse_error_ = true;
     }
+  }
 }
 	break;
 	case 3:
-#line 26 "packet_actions.rl"
+#line 44 "packet_actions.rl"
 	{
-#ifndef AVR
-    /*
-     * Assume STL libraries are not available on AVR devices, so don't include
-     * methods using them when targeting AVR architectures.
-     * */
-
-    cerr << "parse error near byte[" << (p - start) << "]: "
-         << std::string((char *)start, (p - start) + 1) << endl;
-#endif // ifndef AVR
+#ifdef VERBOSE_STATES
+  std::cout << "[packet_err]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  parse_error_ = true;
 }
 	break;
 	case 4:
-#line 38 "packet_actions.rl"
+#line 51 "packet_actions.rl"
 	{
-    // Reset received-bytes counter.
-    packet->payload_length_ = 0;
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
+            << payload_bytes_expected_ << std::endl;
+#endif  // #ifdef VERBOSE_STATES
 }
 	break;
 	case 5:
-#line 43 "packet_actions.rl"
+#line 58 "packet_actions.rl"
 	{
-    /* Received first octet of a two-octet payload-length.  Clear the top bit.
-     * Clear the top bit and shift over 8-bits, since this is just the
-     * _Most-Significant-Byte (MSB)_.
-     *
-     * See also: `payloadlength_lsb`.
-     */
-    packet->payload_length_ = (int)(((*p) & 0x7F)) << 8;
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_start]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  // Reset received-bytes counter.
+  payload_bytes_expected_ = 0;
 }
 	break;
 	case 6:
-#line 53 "packet_actions.rl"
+#line 66 "packet_actions.rl"
 	{
-    /* Received _Least-Significant-Byte (i.e., LSB)_ of a two-octet
-     * payload-length, so add value to previous MSB
-     *
-     * See also: `payloadlength_msb`.
-     */
-    packet->payload_length_ += (int)(*p);
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_msb]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Received first octet of a two-octet payload-length.  Clear the top bit.
+   * Clear the top bit and shift over 8-bits, since this is just the
+   * _Most-Significant-Byte (MSB)_.
+   *
+   * See also: `payloadlength_lsb`.
+   */
+  payload_bytes_expected_ = (int)(((*p) & 0x7F)) << 8;
 }
 	break;
 	case 7:
-#line 62 "packet_actions.rl"
+#line 79 "packet_actions.rl"
 	{
-    /* Received single-octet payload-length. */
-    packet->payload_length_ = (int)(*p);
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_lsb]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Received _Least-Significant-Byte (i.e., LSB)_ of a two-octet
+   * payload-length, so add value to previous MSB
+   *
+   * See also: `payloadlength_msb`.
+   */
+  payload_bytes_expected_ += (int)(*p);
 }
 	break;
 	case 8:
-#line 67 "packet_actions.rl"
+#line 91 "packet_actions.rl"
 	{
-    // Reset received-bytes counter.
-    this->payload_bytes_received_ = 0;
-    packet->payload_buffer_ = p;
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_single]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Received single-octet payload-length. */
+  payload_bytes_expected_ = (int)(*p);
 }
 	break;
 	case 9:
-#line 73 "packet_actions.rl"
+#line 99 "packet_actions.rl"
 	{
-    /* We received another payload octet, so:
-     *
-     *   - Update CRC checksum.
-     *   - Increment received count.
-     *   - Check if we've received all expected octets. */
-    crc = update_crc(crc, *p);
-    if (++this->payload_bytes_received_ == packet->payload_length_) {
-        /* We've received the expected number of payload octets. */
-        {cs = stack[--top]; goto _again;}
-    }
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_start] expected size: " << payload_bytes_expected_
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Resize the payload buffer to fit the expected payload size. */
+  packet_->reallocate_buffer(payload_bytes_expected_);
+  // Reset received-bytes counter.
+  payload_bytes_received_ = 0;
 }
 	break;
 	case 10:
-#line 86 "packet_actions.rl"
+#line 110 "packet_actions.rl"
 	{
-    crc_start = p;
-    packet->crc_ = (*p) << 8;
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* We received another payload octet, so:
+   *
+   *   - Update CRC checksum.
+   *   - Copy octet _(i.e. byte)_ to payload buffer of packet.
+   *   - Increment received count.
+   *   - Check if we've received all expected octets. */
+  crc_ = update_crc(crc_, *p);
+  packet_->payload_buffer_[payload_bytes_received_++] = *p;
+  if (payload_bytes_received_ == payload_bytes_expected_) {
+    /* We've received the expected number of payload octets. */
+    {cs = stack[--top]; goto _again;}
+  }
 }
 	break;
 	case 11:
-#line 91 "packet_actions.rl"
+#line 129 "packet_actions.rl"
 	{
-    packet->crc_ += *p;
+  crc_ = crc_init();
+  crc_byte_count_ = 1;
+  packet_->crc_ = (*p) << 8;
 }
 	break;
 	case 12:
+#line 135 "packet_actions.rl"
+	{
+  packet_->crc_ += *p;
+  crc_byte_count_++;
+}
+	break;
+	case 13:
 #line 47 "packet.rl"
 	{ {stack[top++] = cs; cs = 10; goto _again;} }
 	break;
-#line 312 "packet_actions.c"
+#line 365 "packet_actions.cpp"
 		}
 	}
 
@@ -325,28 +378,28 @@ _again:
 	while ( __nacts-- > 0 ) {
 		switch ( *__acts++ ) {
 	case 3:
-#line 26 "packet_actions.rl"
+#line 44 "packet_actions.rl"
 	{
-#ifndef AVR
-    /*
-     * Assume STL libraries are not available on AVR devices, so don't include
-     * methods using them when targeting AVR architectures.
-     * */
-
-    cerr << "parse error near byte[" << (p - start) << "]: "
-         << std::string((char *)start, (p - start) + 1) << endl;
-#endif // ifndef AVR
+#ifdef VERBOSE_STATES
+  std::cout << "[packet_err]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  parse_error_ = true;
 }
 	break;
-	case 8:
-#line 67 "packet_actions.rl"
+	case 9:
+#line 99 "packet_actions.rl"
 	{
-    // Reset received-bytes counter.
-    this->payload_bytes_received_ = 0;
-    packet->payload_buffer_ = p;
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_start] expected size: " << payload_bytes_expected_
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Resize the payload buffer to fit the expected payload size. */
+  packet_->reallocate_buffer(payload_bytes_expected_);
+  // Reset received-bytes counter.
+  payload_bytes_received_ = 0;
 }
 	break;
-#line 350 "packet_actions.c"
+#line 403 "packet_actions.cpp"
 		}
 	}
 	}
@@ -354,28 +407,9 @@ _again:
 	_out: {}
 	}
 
-#line 146 "packet_actions.rl"
-
-    crc = crc_finalize(crc);
-
-    if (packet->has_crc_ && (packet->crc_ != crc)) {
-        /* Packet parse was not completed successfully, due to either:
-         *
-         *   - A parsing error.
-         *   - A CRC checksum mismatch.
-         */
-        this->packet_completed_ = false;
-        cerr << "[CRC mismatch] " << endl
-             << "  reported: " << packet->crc_ << endl
-             << "  computed: " << crc << endl;
-    }
-
-    if (!this->packet_completed_) {
-        packet->command_ = 0x00;
-    }
-
-    return this->packet_completed_;
+#line 197 "packet_actions.rl"
 }
+
 
 uint16_t update_crc(uint16_t crc, uint8_t data) {
 #ifdef AVR

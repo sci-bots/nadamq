@@ -1,0 +1,25 @@
+packet_actions = Command('packet_actions.cpp', 'packet_actions.rl',
+                         'ragel -o $TARGET $SOURCE')
+packet_dot = Command('packet_actions.dot', 'packet_actions.rl',
+                     'ragel -V -o $TARGET $SOURCE')
+packet_pdf = Command('packet_actions.pdf', packet_dot,
+                     'dot -Tpdf -o $TARGET $SOURCE')
+
+Depends(packet_actions, 'packet.rl')
+Depends(packet_dot, 'packet.rl')
+Depends(packet_pdf, 'packet.rl')
+
+parser_actions = Command('parser_actions.cpp', 'parser_actions.rl',
+                         'ragel -o $TARGET $SOURCE')
+parser_dot = Command('parser_actions.dot', 'parser_actions.rl',
+                     'ragel -V -o $TARGET $SOURCE')
+parser_pdf = Command('parser_actions.pdf', parser_dot,
+                     'dot -Tpdf -o $TARGET $SOURCE')
+
+Depends(parser_actions, 'parser_grammar.rl')
+Depends(parser_dot, 'parser_grammar.rl')
+Depends(parser_pdf, 'parser_grammar.rl')
+
+Program(['test_parser.cpp', parser_actions], CCFLAGS=['-g', '-O0'])
+Program(['test_packet_parser.cpp', packet_actions, 'crc-16.c'],
+        CCFLAGS=['-g', '-O0'])

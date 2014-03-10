@@ -43,9 +43,9 @@
 
     # instantiate machine rules
     main := (
-        (startflag @startflag_received)
-        (header $err(packet_err) @{ fcall process_payload; })
-        (crc >crc_start @crc_received)?
-        (endflag @endflag_received)
+        (startflag $err(packet_err) @startflag_received)
+        (header $err(packet_err) @{ fcall process_payload; } %payload_end)
+        (crc $err(packet_err) >crc_start @crc_received)?
+        (endflag $err(packet_err) @endflag_received)
     );
 }%%

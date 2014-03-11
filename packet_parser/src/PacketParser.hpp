@@ -2,24 +2,25 @@
 #define ___PACKET_PARSER__HPP___
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifndef AVR
+#include "crc-16.h"
 
-/*
- * Assume STL libraries are not available on AVR devices, so don't include
- * methods using them when targeting AVR architectures.
- * */
+/* Assume STL libraries are not available on AVR devices, so don't include
+ * methods using them when targeting AVR architectures. */
 #include <stdexcept>
 #include <string>
 #include <iostream>
 using namespace std;
 
-#include "crc-16.h"
-
 #else
 
 /* AVR headers define `_crc16_update` function. */
 #include <util/crc16.h>
+
+inline uint16_t crc_init() { return 0; }
+inline void crc_finalize(...) {}
 
 #endif // ifndef AVR
 

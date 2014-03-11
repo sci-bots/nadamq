@@ -10,53 +10,6 @@
 
 
 #line 13 "packet_actions.cpp"
-static const char _packet_grammar_actions[] = {
-	0, 1, 0, 1, 1, 1, 2, 1, 
-	3, 1, 9, 1, 10, 1, 12, 2, 
-	4, 11, 2, 5, 6, 2, 7, 13, 
-	2, 9, 10, 3, 4, 11, 2, 3, 
-	5, 8, 13
-};
-
-static const char _packet_grammar_key_offsets[] = {
-	0, 0, 1, 1, 3, 4, 4, 5, 
-	5, 5, 5, 5
-};
-
-static const unsigned char _packet_grammar_trans_keys[] = {
-	126u, 128u, 255u, 126u, 126u, 0
-};
-
-static const char _packet_grammar_single_lengths[] = {
-	0, 1, 0, 0, 1, 0, 1, 0, 
-	0, 0, 0, 0
-};
-
-static const char _packet_grammar_range_lengths[] = {
-	0, 0, 0, 1, 0, 0, 0, 0, 
-	0, 0, 0, 0
-};
-
-static const char _packet_grammar_index_offsets[] = {
-	0, 0, 2, 3, 5, 7, 8, 10, 
-	11, 12, 13, 14
-};
-
-static const char _packet_grammar_trans_targs[] = {
-	2, 0, 3, 7, 4, 9, 5, 6, 
-	8, 0, 4, 0, 6, 11, 11, 0
-};
-
-static const char _packet_grammar_trans_actions[] = {
-	1, 7, 3, 18, 31, 27, 15, 13, 
-	5, 7, 21, 7, 13, 24, 11, 0
-};
-
-static const char _packet_grammar_eof_actions[] = {
-	0, 7, 7, 7, 7, 7, 7, 7, 
-	0, 0, 9, 0
-};
-
 static const int packet_grammar_start = 1;
 static const int packet_grammar_first_final = 8;
 static const int packet_grammar_error = 0;
@@ -96,7 +49,7 @@ void PacketParser::reset(Packet *packet) {
   parse_error_ = false;
 
   
-#line 100 "packet_actions.cpp"
+#line 53 "packet_actions.cpp"
 	{
 	cs = packet_grammar_start;
 	top = 0;
@@ -121,80 +74,55 @@ void PacketParser::parse_byte(uint8_t *byte) {
   }
 
   
-#line 125 "packet_actions.cpp"
+#line 78 "packet_actions.cpp"
 	{
-	int _klen;
-	unsigned int _trans;
-	const char *_acts;
-	unsigned int _nacts;
-	const unsigned char *_keys;
-
 	if ( p == pe )
 		goto _test_eof;
-	if ( cs == 0 )
-		goto _out;
+	goto _resume;
+
+_again:
+	switch ( cs ) {
+		case 1: goto st1;
+		case 0: goto st0;
+		case 2: goto st2;
+		case 3: goto st3;
+		case 4: goto st4;
+		case 5: goto st5;
+		case 6: goto st6;
+		case 8: goto st8;
+		case 9: goto st9;
+		case 7: goto st7;
+		case 10: goto st10;
+		case 11: goto st11;
+	default: break;
+	}
+
+	if ( ++p == pe )
+		goto _test_eof;
 _resume:
-	_keys = _packet_grammar_trans_keys + _packet_grammar_key_offsets[cs];
-	_trans = _packet_grammar_index_offsets[cs];
-
-	_klen = _packet_grammar_single_lengths[cs];
-	if ( _klen > 0 ) {
-		const unsigned char *_lower = _keys;
-		const unsigned char *_mid;
-		const unsigned char *_upper = _keys + _klen - 1;
-		while (1) {
-			if ( _upper < _lower )
-				break;
-
-			_mid = _lower + ((_upper-_lower) >> 1);
-			if ( (*p) < *_mid )
-				_upper = _mid - 1;
-			else if ( (*p) > *_mid )
-				_lower = _mid + 1;
-			else {
-				_trans += (unsigned int)(_mid - _keys);
-				goto _match;
-			}
-		}
-		_keys += _klen;
-		_trans += _klen;
-	}
-
-	_klen = _packet_grammar_range_lengths[cs];
-	if ( _klen > 0 ) {
-		const unsigned char *_lower = _keys;
-		const unsigned char *_mid;
-		const unsigned char *_upper = _keys + (_klen<<1) - 2;
-		while (1) {
-			if ( _upper < _lower )
-				break;
-
-			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
-			if ( (*p) < _mid[0] )
-				_upper = _mid - 2;
-			else if ( (*p) > _mid[1] )
-				_lower = _mid + 2;
-			else {
-				_trans += (unsigned int)((_mid - _keys)>>1);
-				goto _match;
-			}
-		}
-		_trans += _klen;
-	}
-
-_match:
-	cs = _packet_grammar_trans_targs[_trans];
-
-	if ( _packet_grammar_trans_actions[_trans] == 0 )
-		goto _again;
-
-	_acts = _packet_grammar_actions + _packet_grammar_trans_actions[_trans];
-	_nacts = (unsigned int) *_acts++;
-	while ( _nacts-- > 0 )
+	switch ( cs )
 	{
-		switch ( *_acts++ )
-		{
-	case 0:
+st1:
+	if ( ++p == pe )
+		goto _test_eof1;
+case 1:
+	if ( (*p) == 126u )
+		goto tr1;
+	goto tr0;
+tr0:
+#line 44 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[packet_err]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  parse_error_ = true;
+}
+	goto st0;
+#line 122 "packet_actions.cpp"
+st0:
+cs = 0;
+	goto _out;
+tr1:
 #line 5 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -203,8 +131,14 @@ _match:
   // We're starting to process a new packet, so reset completed status.
   message_completed_ = false;
 }
-	break;
-	case 1:
+	goto st2;
+st2:
+	if ( ++p == pe )
+		goto _test_eof2;
+case 2:
+#line 140 "packet_actions.cpp"
+	goto tr2;
+tr2:
 #line 13 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -212,8 +146,96 @@ _match:
 #endif  // #ifdef VERBOSE_STATES
   packet_->command(*p);
 }
-	break;
-	case 2:
+	goto st3;
+st3:
+	if ( ++p == pe )
+		goto _test_eof3;
+case 3:
+#line 155 "packet_actions.cpp"
+	if ( 128u <= (*p) )
+		goto tr4;
+	goto tr3;
+tr3:
+#line 58 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_start]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  // Reset received-bytes counter.
+  payload_bytes_expected_ = 0;
+}
+#line 91 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_single]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Received single-octet payload-length. */
+  payload_bytes_expected_ = (int)(*p);
+}
+#line 47 "packet.rl"
+	{ {stack[top++] = 4; goto st10;} }
+	goto st4;
+tr9:
+#line 79 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[payloadlength_lsb]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* Received _Least-Significant-Byte (i.e., LSB)_ of a two-octet
+   * payload-length, so add value to previous MSB
+   *
+   * See also: `payloadlength_msb`.
+   */
+  payload_bytes_expected_ += (int)(*p);
+}
+#line 47 "packet.rl"
+	{ {stack[top++] = 4; goto st10;} }
+	goto st4;
+st4:
+	if ( ++p == pe )
+		goto _test_eof4;
+case 4:
+#line 199 "packet_actions.cpp"
+	if ( (*p) == 126u )
+		goto tr6;
+	goto tr5;
+tr5:
+#line 51 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
+            << payload_bytes_expected_ << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+}
+#line 129 "packet_actions.rl"
+	{
+  crc_ = crc_init();
+  crc_byte_count_ = 1;
+  packet_->crc_ = (*p) << 8;
+}
+	goto st5;
+st5:
+	if ( ++p == pe )
+		goto _test_eof5;
+case 5:
+#line 222 "packet_actions.cpp"
+	goto tr7;
+tr7:
+#line 135 "packet_actions.rl"
+	{
+  packet_->crc_ += *p;
+  crc_byte_count_++;
+}
+	goto st6;
+st6:
+	if ( ++p == pe )
+		goto _test_eof6;
+case 6:
+#line 235 "packet_actions.cpp"
+	if ( (*p) == 126u )
+		goto tr8;
+	goto tr0;
+tr8:
 #line 20 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -238,17 +260,14 @@ _match:
     }
   }
 }
-	break;
-	case 3:
-#line 44 "packet_actions.rl"
-	{
-#ifdef VERBOSE_STATES
-  std::cout << "[packet_err]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  parse_error_ = true;
-}
-	break;
-	case 4:
+	goto st8;
+st8:
+	if ( ++p == pe )
+		goto _test_eof8;
+case 8:
+#line 269 "packet_actions.cpp"
+	goto tr0;
+tr6:
 #line 51 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -256,8 +275,44 @@ _match:
             << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
 }
-	break;
-	case 5:
+#line 129 "packet_actions.rl"
+	{
+  crc_ = crc_init();
+  crc_byte_count_ = 1;
+  packet_->crc_ = (*p) << 8;
+}
+#line 20 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[endflag_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  uint16_t init_crc = crc_init();
+  if (crc_ == init_crc || crc_byte_count_ == 2) {
+    /* Either packet contains no CRC or we've received two CRC bytes. */
+    if (payload_bytes_expected_ == payload_bytes_received_) {
+      /* We've received an entire packet with the expected payload size, so
+       * update the completed status accordingly. */
+      message_completed_ = true;
+      if (crc_byte_count_ >= 2) {
+        /* A CRC was included in the packet. */
+        packet_->has_crc_ = true;
+      }
+      /* Update payload length, since we successfully parsed the packet. */
+      packet_->payload_length_ = payload_bytes_received_;
+    } else {
+      /* Reset state of packet, since the parsing was not successful. */
+      parse_error_ = true;
+    }
+  }
+}
+	goto st9;
+st9:
+	if ( ++p == pe )
+		goto _test_eof9;
+case 9:
+#line 314 "packet_actions.cpp"
+	goto tr7;
+tr4:
 #line 58 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -266,8 +321,6 @@ _match:
   // Reset received-bytes counter.
   payload_bytes_expected_ = 0;
 }
-	break;
-	case 6:
 #line 66 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -281,32 +334,19 @@ _match:
    */
   payload_bytes_expected_ = (int)(((*p) & 0x7F)) << 8;
 }
-	break;
-	case 7:
-#line 79 "packet_actions.rl"
-	{
-#ifdef VERBOSE_STATES
-  std::cout << "[payloadlength_lsb]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  /* Received _Least-Significant-Byte (i.e., LSB)_ of a two-octet
-   * payload-length, so add value to previous MSB
-   *
-   * See also: `payloadlength_msb`.
-   */
-  payload_bytes_expected_ += (int)(*p);
-}
-	break;
-	case 8:
-#line 91 "packet_actions.rl"
-	{
-#ifdef VERBOSE_STATES
-  std::cout << "[payloadlength_single]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  /* Received single-octet payload-length. */
-  payload_bytes_expected_ = (int)(*p);
-}
-	break;
-	case 9:
+	goto st7;
+st7:
+	if ( ++p == pe )
+		goto _test_eof7;
+case 7:
+#line 343 "packet_actions.cpp"
+	goto tr9;
+st10:
+	if ( ++p == pe )
+		goto _test_eof10;
+case 10:
+	goto tr10;
+tr10:
 #line 99 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -318,8 +358,6 @@ _match:
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
 }
-	break;
-	case 10:
 #line 110 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -336,46 +374,61 @@ _match:
   packet_->payload_buffer_[payload_bytes_received_++] = *p;
   if (payload_bytes_received_ == payload_bytes_expected_) {
     /* We've received the expected number of payload octets. */
-    {cs = stack[--top]; goto _again;}
+    {cs = stack[--top];goto _again;}
   }
 }
-	break;
-	case 11:
-#line 129 "packet_actions.rl"
+	goto st11;
+tr11:
+#line 110 "packet_actions.rl"
 	{
-  crc_ = crc_init();
-  crc_byte_count_ = 1;
-  packet_->crc_ = (*p) << 8;
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  /* We received another payload octet, so:
+   *
+   *   - Update CRC checksum.
+   *   - Copy octet _(i.e. byte)_ to payload buffer of packet.
+   *   - Increment received count.
+   *   - Check if we've received all expected octets. */
+  crc_ = update_crc(crc_, *p);
+  packet_->payload_buffer_[payload_bytes_received_++] = *p;
+  if (payload_bytes_received_ == payload_bytes_expected_) {
+    /* We've received the expected number of payload octets. */
+    {cs = stack[--top];goto _again;}
+  }
 }
-	break;
-	case 12:
-#line 135 "packet_actions.rl"
-	{
-  packet_->crc_ += *p;
-  crc_byte_count_++;
-}
-	break;
-	case 13:
-#line 47 "packet.rl"
-	{ {stack[top++] = cs; cs = 10; goto _again;} }
-	break;
-#line 363 "packet_actions.cpp"
-		}
+	goto st11;
+st11:
+	if ( ++p == pe )
+		goto _test_eof11;
+case 11:
+#line 407 "packet_actions.cpp"
+	goto tr11;
 	}
+	_test_eof1: cs = 1; goto _test_eof; 
+	_test_eof2: cs = 2; goto _test_eof; 
+	_test_eof3: cs = 3; goto _test_eof; 
+	_test_eof4: cs = 4; goto _test_eof; 
+	_test_eof5: cs = 5; goto _test_eof; 
+	_test_eof6: cs = 6; goto _test_eof; 
+	_test_eof8: cs = 8; goto _test_eof; 
+	_test_eof9: cs = 9; goto _test_eof; 
+	_test_eof7: cs = 7; goto _test_eof; 
+	_test_eof10: cs = 10; goto _test_eof; 
+	_test_eof11: cs = 11; goto _test_eof; 
 
-_again:
-	if ( cs == 0 )
-		goto _out;
-	if ( ++p != pe )
-		goto _resume;
 	_test_eof: {}
 	if ( p == eof )
 	{
-	const char *__acts = _packet_grammar_actions + _packet_grammar_eof_actions[cs];
-	unsigned int __nacts = (unsigned int) *__acts++;
-	while ( __nacts-- > 0 ) {
-		switch ( *__acts++ ) {
-	case 3:
+	switch ( cs ) {
+	case 1: 
+	case 2: 
+	case 3: 
+	case 4: 
+	case 5: 
+	case 6: 
+	case 7: 
 #line 44 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -384,7 +437,7 @@ _again:
   parse_error_ = true;
 }
 	break;
-	case 9:
+	case 10: 
 #line 99 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -397,8 +450,7 @@ _again:
   payload_bytes_received_ = 0;
 }
 	break;
-#line 401 "packet_actions.cpp"
-		}
+#line 454 "packet_actions.cpp"
 	}
 	}
 

@@ -39,7 +39,7 @@ PACKET_TYPES = _PacketTypes()
 FLAGS = _Flags()
 
 
-cdef extern from "PacketParser.hpp":
+cdef extern from "PacketParser.h":
     cdef enum packet_type "Packet::packet_type::EnumType":
         PACKET_TYPE_NONE "Packet::packet_type::NONE"
         PACKET_TYPE_REQUEST "Packet::packet_type::REQUEST"

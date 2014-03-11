@@ -16,7 +16,7 @@ include "parser_grammar.rl";
 
 #include <stdio.h>
 #include <string.h>
-#include "PacketParser.hpp"
+#include "PacketParser.h"
 
 %% write data;
 

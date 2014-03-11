@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iomanip>  // `std::setw`
 
-#include "PacketParser.hpp"
+#include "PacketParser.h"
 #include "../../../stream_parser/src/stream.hpp"
 
 

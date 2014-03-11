@@ -5,9 +5,11 @@
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>
+#else
+#include "output_buffer.h"
 #endif
 
-#include "PacketParser.hpp"
+#include "PacketParser.h"
 
 
 template <typename Parser, typename Stream>
@@ -62,7 +64,51 @@ class PacketHandlerBase {
 };
 
 
-#ifndef AVR
+#ifdef AVR
+template <typename Parser, typename IStream, typename OStream>
+class VerbosePacketHandler : public PacketHandlerBase<Parser, IStream> {
+  public:
+
+  typedef PacketHandlerBase<Parser, IStream> base_type;
+  typedef typename base_type::packet_type packet_type;
+
+  using base_type::parser_;
+
+  OStream &ostream_;
+
+  VerbosePacketHandler(Parser &parser, IStream &istream, OStream &ostream)
+    : base_type(parser, istream), ostream_(ostream) {}
+
+  virtual void handle_packet(packet_type &packet) {
+    ostream_.println(P("# success #"));
+    ostream_.println("");
+    ostream_.print("type: ");
+    ostream_.println(packet.type_);
+    ostream_.print("command: ");
+    ostream_.println(static_cast<int>(0x0FF & packet.command()));
+    if (packet.has_crc_) {
+      ostream_.print("CRC ok: ");
+      if (parser_.verified()) {
+        ostream_.println("T");
+      } else {
+        ostream_.println("F");
+      }
+    }
+    ostream_.print("payload length: ");
+    ostream_.println(packet.payload_length_);
+    ostream_.print("payload: '");
+    for (int i = 0; i < packet.payload_length_; i++) {
+      ostream_.print((char)packet.payload_buffer_[i]);
+    }
+    ostream_.println("'");
+    ostream_.println("");
+  }
+
+  virtual void handle_error(packet_type &packet) {
+    ostream_.println("# ERROR #");
+  }
+};
+#else
 template <typename Parser, typename Stream>
 class VerbosePacketHandler : public PacketHandlerBase<Parser, Stream> {
   public:
@@ -96,7 +142,7 @@ class VerbosePacketHandler : public PacketHandlerBase<Parser, Stream> {
     std::cout << "# ERROR: Parse error #" << std::endl;
   }
 };
-#endif
+#endif  // #ifdef AVR
 
 
 #endif  // #ifndef ___PACKET_HANDLER__HPP___

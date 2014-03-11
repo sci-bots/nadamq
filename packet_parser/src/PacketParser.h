@@ -22,7 +22,7 @@ inline void crc_finalize(...) {}
 
 #endif // ifndef AVR
 
-#include "Packet.hpp"
+#include "Packet.h"
 
 
 uint16_t update_crc(uint16_t crc, uint8_t data);

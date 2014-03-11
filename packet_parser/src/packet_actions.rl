@@ -147,7 +147,7 @@ include "packet.rl";
 
 %% write data;
 
-void PacketParser::reset(Packet *packet) {
+void PacketParser::reset() {
   /*
    * Attempt to parse a packet from a buffer with length `buffer_len`.
    *
@@ -168,7 +168,6 @@ void PacketParser::reset(Packet *packet) {
    * attempt, the state of attributes the attributes of `packet` are
    * _undefined_.
    */
-  packet_ = packet;
   packet_->reset();
   crc_ = 0;
   crc_byte_count_ = 0;

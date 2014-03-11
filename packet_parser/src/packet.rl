@@ -25,14 +25,14 @@
     LWSP = ( WSP | ( CRLF WSP ) )*;
     OCTET = 0x00..0xff;
     VCHAR = 0x21..0x7e;
-    startflag = "~";
+    startflag = "~~s~~";
     command_with_type_msb = 0x00..0xff;
     payloadlength = (0x00..0x7f @payloadlength_single) |
                     (0x80..0xff @payloadlength_msb
                      OCTET @payloadlength_lsb);
     payload = OCTET*;
     crc = OCTET{2};
-    endflag = "~";
+    endflag = "!";
 
     header = (command_with_type_msb @command_received)
              (payloadlength >payloadlength_start);

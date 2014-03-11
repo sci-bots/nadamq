@@ -1,3 +1,4 @@
+cimport cython
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t
 
@@ -8,6 +9,34 @@ import numpy as np
 
 ctypedef unsigned char uchar
 ctypedef uint16_t crc_t
+
+
+@cython.internal
+cdef class _Flags:
+    cdef:
+        readonly string START
+        readonly string END
+
+    def __cinit__(self):
+        self.START = '~~s~~'
+        self.END = '!'
+
+
+@cython.internal
+cdef class _PacketTypes:
+    cdef:
+        readonly int NONE
+        readonly int REQUEST
+        readonly int RESPONSE
+
+    def __cinit__(self):
+        self.NONE = PACKET_TYPE_NONE
+        self.REQUEST = PACKET_TYPE_REQUEST
+        self.RESPONSE = PACKET_TYPE_RESPONSE
+
+
+PACKET_TYPES = _PacketTypes()
+FLAGS = _Flags()
 
 
 cdef extern from "PacketParser.hpp":
@@ -145,34 +174,17 @@ def get_packet_data(command_byte, payload, crc_checksum=False):
 
     if crc_checksum:
         crc = compute_crc16(payload)
-        packet_str = '~%s%s%s%s%s~' % (command, chr(len(payload)), payload,
-                                       chr((crc >> 8) & 0x0FF),
-                                       chr(crc & 0x0FF))
+        packet_str = '%s%s%s%s%s' % (command, chr(len(payload)), payload,
+                                     chr((crc >> 8) & 0x0FF), chr(crc & 0x0FF))
     else:
-        packet_str = '~%s%s%s~' % (command, chr(len(payload)), payload)
+        packet_str = '%s%s%s' % (command, chr(len(payload)), payload)
 
     # Construct packet from:
     #   * Command octet
     #   * Payload data
     #   * CRC checksum [if enabled]
-    return np.fromstring(packet_str, dtype='uint8')
+    return np.fromstring(FLAGS.START + packet_str + FLAGS.END, dtype='uint8')
 
-cimport cython
-
-@cython.internal
-cdef class _PacketTypes:
-    cdef:
-        readonly int NONE
-        readonly int REQUEST
-        readonly int RESPONSE
-
-    def __cinit__(self):
-        self.NONE = PACKET_TYPE_NONE
-        self.REQUEST = PACKET_TYPE_REQUEST
-        self.RESPONSE = PACKET_TYPE_RESPONSE
-
-
-PACKET_TYPES = _PacketTypes()
 
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
                        PACKET_TYPE_REQUEST: 'REQUEST',

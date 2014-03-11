@@ -1,10 +1,13 @@
-from PacketParser import cPacketParser, get_packet_data
+from nose.tools import ok_, eq_
+from PacketParser import (cPacketParser, get_packet_data, PACKET_NAME_BY_TYPE,
+                          PACKET_TYPES)
 
 
 def parse_demo(command_byte, payload, crc_checksum=False):
     packet_data = get_packet_data(command_byte, payload, crc_checksum)
     parser = cPacketParser()
     packet = parser.parse(packet_data)
+    print 'packet_type: %s' % PACKET_NAME_BY_TYPE[packet.type_]
     print 'command: %s' % hex(packet.command)
     print 'payload: "%s"' % packet.data()
     if crc_checksum:
@@ -21,29 +24,28 @@ def main():
     parse_demo(args.command_byte, args.payload, args.crc)
 
 
-def test_parse_pass():
-    parse_demo('0x80', 'hello')
-    parse_demo('0xFF', 'hello', crc_checksum=True)
+def test_parse_request():
+    packet = parse_demo('0x80', 'hello')
+    eq_(packet.type_, PACKET_TYPES.REQUEST)
+    eq_(packet.command, 0)
+    eq_(packet.data(), 'hello')
+
+    packet = parse_demo('0xFF', 'hello', crc_checksum=True)
+    eq_(packet.type_, PACKET_TYPES.REQUEST)
+    eq_(packet.command, 0x7F)
+    eq_(packet.data(), 'hello')
 
 
-def test_parse_fail():
-    try:
-        # This test should fail because the command is not within the range
-        # `[0x80..0xFF]`.
-        parse_demo('0x00', 'hello')
-    except RuntimeError, e:
-        assert('Error parsing packet:' in str(e))
-    else:
-        raise RuntimeError
+def test_parse_response():
+    packet = parse_demo('0x00', 'hello')
+    eq_(packet.type_, PACKET_TYPES.RESPONSE)
+    eq_(packet.command, 0x00)
+    eq_(packet.data(), 'hello')
 
-    try:
-        # This test should fail because the command is not within the range
-        # `[0x80..0xFF]`.
-        parse_demo('0x79', 'blah')
-    except RuntimeError, e:
-        assert('Error parsing packet:' in str(e))
-    else:
-        raise RuntimeError
+    packet = parse_demo('0x79', 'blah')
+    eq_(packet.type_, PACKET_TYPES.RESPONSE)
+    eq_(packet.command, 0x79)
+    eq_(packet.data(), 'blah')
 
 
 def parse_args():

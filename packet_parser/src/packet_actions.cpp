@@ -19,12 +19,12 @@ static const char _packet_grammar_actions[] = {
 };
 
 static const char _packet_grammar_key_offsets[] = {
-	0, 0, 1, 3, 5, 6, 6, 7, 
-	7, 7, 7, 7
+	0, 0, 1, 1, 3, 4, 4, 5, 
+	5, 5, 5, 5
 };
 
 static const unsigned char _packet_grammar_trans_keys[] = {
-	126u, 128u, 255u, 128u, 255u, 126u, 126u, 0
+	126u, 128u, 255u, 126u, 126u, 0
 };
 
 static const char _packet_grammar_single_lengths[] = {
@@ -33,25 +33,23 @@ static const char _packet_grammar_single_lengths[] = {
 };
 
 static const char _packet_grammar_range_lengths[] = {
-	0, 0, 1, 1, 0, 0, 0, 0, 
+	0, 0, 0, 1, 0, 0, 0, 0, 
 	0, 0, 0, 0
 };
 
 static const char _packet_grammar_index_offsets[] = {
-	0, 0, 2, 4, 6, 8, 9, 11, 
-	12, 13, 14, 15
+	0, 0, 2, 3, 5, 7, 8, 10, 
+	11, 12, 13, 14
 };
 
 static const char _packet_grammar_trans_targs[] = {
-	2, 0, 3, 0, 7, 4, 9, 5, 
-	6, 8, 0, 4, 0, 6, 11, 11, 
-	0
+	2, 0, 3, 7, 4, 9, 5, 6, 
+	8, 0, 4, 0, 6, 11, 11, 0
 };
 
 static const char _packet_grammar_trans_actions[] = {
-	1, 7, 3, 7, 18, 31, 27, 15, 
-	13, 5, 7, 21, 7, 13, 24, 11, 
-	0
+	1, 7, 3, 18, 31, 27, 15, 13, 
+	5, 7, 21, 7, 13, 24, 11, 0
 };
 
 static const char _packet_grammar_eof_actions[] = {
@@ -98,7 +96,7 @@ void PacketParser::reset(Packet *packet) {
   parse_error_ = false;
 
   
-#line 102 "packet_actions.cpp"
+#line 100 "packet_actions.cpp"
 	{
 	cs = packet_grammar_start;
 	top = 0;
@@ -123,7 +121,7 @@ void PacketParser::parse_byte(uint8_t *byte) {
   }
 
   
-#line 127 "packet_actions.cpp"
+#line 125 "packet_actions.cpp"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -212,7 +210,7 @@ _match:
 #ifdef VERBOSE_STATES
   std::cout << "[command_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
-  packet_->command_ = *p;
+  packet_->command(*p);
 }
 	break;
 	case 2:
@@ -361,7 +359,7 @@ _match:
 #line 47 "packet.rl"
 	{ {stack[top++] = cs; cs = 10; goto _again;} }
 	break;
-#line 365 "packet_actions.cpp"
+#line 363 "packet_actions.cpp"
 		}
 	}
 
@@ -399,7 +397,7 @@ _again:
   payload_bytes_received_ = 0;
 }
 	break;
-#line 403 "packet_actions.cpp"
+#line 401 "packet_actions.cpp"
 		}
 	}
 	}

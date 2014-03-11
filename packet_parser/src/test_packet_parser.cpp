@@ -55,7 +55,7 @@ int main(int argc, const char *argv[]) {
         std::cout << std::endl << "## Packet parsed successfully ##" << std::endl
                   << std::endl;
         std::cout << std::setw(24) << "command: " << std::hex
-                  << static_cast<int>(0x00FF & packet.command_) << std::endl;
+                  << static_cast<int>(0x00FF & packet.command()) << std::endl;
         if (packet.has_crc_) {
           std::cout << std::setw(24) << "CRC ok: " << parser.verified()
                     << std::endl;

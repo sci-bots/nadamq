@@ -11,8 +11,13 @@ ctypedef uint16_t crc_t
 
 
 cdef extern from "PacketParser.hpp":
+    cdef enum packet_type "Packet::packet_type::EnumType":
+        PACKET_TYPE_NONE "Packet::packet_type::NONE"
+        PACKET_TYPE_REQUEST "Packet::packet_type::REQUEST"
+        PACKET_TYPE_RESPONSE "Packet::packet_type::RESPONSE"
+
     cdef cppclass Packet:
-        uchar command_
+        packet_type type_
         uint16_t payload_length_
         uint16_t buffer_size_
         uchar *payload_buffer_
@@ -21,6 +26,8 @@ cdef extern from "PacketParser.hpp":
 
         Packet()
         string data() except +
+        uchar command()
+        void command(uchar command_with_type_msb)
 
     cdef cppclass PacketParser:
         int payload_bytes_received_
@@ -66,9 +73,17 @@ cdef class cPacket:
                 raise RuntimeError, 'Packet has no CRC'
             return self.thisptr.crc_
 
+    property type_:
+        def __get__(self):
+            return self.thisptr.type_
+        def __set__(self, value):
+            self.thisptr.type_ = value
+
     property command:
         def __get__(self):
-            return self.thisptr.command_
+            return self.thisptr.command()
+        def __set__(self, value):
+            self.thisptr.command(value)
 
 
 cdef class cPacketParser:
@@ -141,3 +156,24 @@ def get_packet_data(command_byte, payload, crc_checksum=False):
     #   * Payload data
     #   * CRC checksum [if enabled]
     return np.fromstring(packet_str, dtype='uint8')
+
+cimport cython
+
+@cython.internal
+cdef class _PacketTypes:
+    cdef:
+        readonly int NONE
+        readonly int REQUEST
+        readonly int RESPONSE
+
+    def __cinit__(self):
+        self.NONE = PACKET_TYPE_NONE
+        self.REQUEST = PACKET_TYPE_REQUEST
+        self.RESPONSE = PACKET_TYPE_RESPONSE
+
+
+PACKET_TYPES = _PacketTypes()
+
+PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
+                       PACKET_TYPE_REQUEST: 'REQUEST',
+                       PACKET_TYPE_RESPONSE: 'RESPONSE'}

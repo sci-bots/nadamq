@@ -26,7 +26,7 @@
     OCTET = 0x00..0xff;
     VCHAR = 0x21..0x7e;
     startflag = "~";
-    command = 0x80..0xff;
+    command_with_type_msb = 0x00..0xff;
     payloadlength = (0x00..0x7f @payloadlength_single) |
                     (0x80..0xff @payloadlength_msb
                      OCTET @payloadlength_lsb);
@@ -34,7 +34,7 @@
     crc = OCTET{2};
     endflag = "~";
 
-    header = (command @command_received)
+    header = (command_with_type_msb @command_received)
              (payloadlength >payloadlength_start);
 
     process_payload := (

@@ -14,7 +14,7 @@ action command_received {
 #ifdef VERBOSE_STATES
   std::cout << "[command_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
-  packet_->command_ = *p;
+  packet_->command(*p);
 }
 
 action endflag_received {

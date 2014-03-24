@@ -12,7 +12,7 @@ using namespace std;
 
 class Packet {
 public:
-  struct packet_type { enum EnumType {NONE, REQUEST, RESPONSE}; };
+  struct packet_type { enum EnumType {NONE, ACK=5, NACK=6, DATA=7}; };
 
   /* Interface unique identifier. */
   uint16_t iuid_;

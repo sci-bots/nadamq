@@ -24,13 +24,15 @@ cdef class _Flags:
 cdef class _PacketTypes:
     cdef:
         readonly int NONE
-        readonly int REQUEST
-        readonly int RESPONSE
+        readonly int ACK
+        readonly int NACK
+        readonly int DATA
 
     def __cinit__(self):
         self.NONE = PACKET_TYPE_NONE
-        self.REQUEST = PACKET_TYPE_REQUEST
-        self.RESPONSE = PACKET_TYPE_RESPONSE
+        self.ACK = PACKET_TYPE_ACK
+        self.NACK = PACKET_TYPE_NACK
+        self.DATA = PACKET_TYPE_DATA
 
 
 PACKET_TYPES = _PacketTypes()
@@ -40,8 +42,9 @@ FLAGS = _Flags()
 cdef extern from "PacketParser.h":
     cdef enum packet_type "Packet::packet_type::EnumType":
         PACKET_TYPE_NONE "Packet::packet_type::NONE"
-        PACKET_TYPE_REQUEST "Packet::packet_type::REQUEST"
-        PACKET_TYPE_RESPONSE "Packet::packet_type::RESPONSE"
+        PACKET_TYPE_ACK "Packet::packet_type::ACK"
+        PACKET_TYPE_NACK "Packet::packet_type::NACK"
+        PACKET_TYPE_DATA "Packet::packet_type::DATA"
 
     cdef cppclass Packet:
         uint16_t iuid_
@@ -157,11 +160,31 @@ def compute_crc16(data):
     return crc_finalize(crc)
 
 
-def get_packet_data(interface_unique_id, packet_type, payload):
-    iuid = (chr((interface_unique_id >> 8) & 0x0FF), chr(interface_unique_id & 0x0FF))
+def byte_pair(value):
+    return (chr((value >> 8) & 0x0FF), chr(value & 0x0FF))
+
+
+def create_ack_packet_bytes(interface_unique_id):
+    iuid = byte_pair(interface_unique_id)
+
+    packet_str = '%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.ACK))
+
+    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
+
+
+def create_nack_packet_bytes(interface_unique_id, max_packet_length=0):
+    iuid = byte_pair(interface_unique_id)
+    packet_str = '%s%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.NACK),
+                               chr(max_packet_length))
+
+    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
+
+
+def create_data_packet_bytes(interface_unique_id, payload):
+    iuid = byte_pair(interface_unique_id)
 
     crc = compute_crc16(payload)
-    packet_str = '%s%s%s%s%s%s%s' % (iuid[0], iuid[1], chr(packet_type),
+    packet_str = '%s%s%s%s%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.DATA),
                                      chr(len(payload)), payload,
                                      chr((crc >> 8) & 0x0FF), chr(crc & 0x0FF))
 
@@ -169,5 +192,6 @@ def get_packet_data(interface_unique_id, packet_type, payload):
 
 
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
-                       PACKET_TYPE_REQUEST: 'REQUEST',
-                       PACKET_TYPE_RESPONSE: 'RESPONSE'}
+                       PACKET_TYPE_ACK: 'ACK',
+                       PACKET_TYPE_NACK: 'NACK',
+                       PACKET_TYPE_DATA: 'DATA'}

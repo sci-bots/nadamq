@@ -30,28 +30,39 @@
 
     startflag = "|"{3};
     iuid = OCTET{2};
-    type = OCTET;
     length = OCTET;
     payload = OCTET*;
     crc = OCTET{2};
 
-    # Action hints:
-    #
-    #  - `@`: Triggered for first byte of match
-    #  - `$`: Triggered for every byte of match
-    #  - `%`: Triggered for last byte of match
-    header = (iuid >id_start $id_octet_received)
-             (type @type_received)
-             (length @length_received);
+    ACK = 0x05;
+    NACK = 0x06;
+    DATA = 0x07;
 
+    # The `process_payload` state machine parses incoming bytes into the packet
+    # buffer until the expected number of bytes has been read.
     process_payload := (
         payload >payload_start $payload_byte_received
     );
 
-    # instantiate machine rules
-    main := (
-        (startflag $err(packet_err) @startflag_received)
-        (header $err(packet_err) @{ fcall process_payload; } %payload_end)
-        (crc $err(packet_err) >crc_start $crc_byte_received @crc_received)
-    );
+    # The `Hub` rule defines the states of the packet parser.
+    Hub = (
+        start: (
+            (startflag @startflag_received)
+            (iuid >id_start $id_octet_received)
+            (ACK >type_received -> final |
+             NACK >type_received -> ProcessingNack |
+             DATA >type_received -> ProcessingData)
+        ),
+
+        ProcessingNack: (
+            length @length_received -> final
+        ),
+
+        ProcessingData: (
+            (length @length_received @{ fcall process_payload; } %payload_end)
+            (crc >crc_start $crc_byte_received @crc_received) -> final
+        )
+    ) $!error;
+    #) ${ std::cout << "[byte_received] " << std::hex << static_cast<int>(*p) << std::dec << std::endl; } $!error;
+    main := Hub* ;
 }%%

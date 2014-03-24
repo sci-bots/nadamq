@@ -2,6 +2,14 @@
 
 machine packet_grammar;
 
+action error {
+#ifdef VERBOSE_STATES
+  std::cout << "[error]: " << std::hex << static_cast<int>(*p) << std::dec
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  parse_error_ = true;
+}
+
 action startflag_received {
 #ifdef VERBOSE_STATES
   std::cout << "[startflag_received]" << std::endl;

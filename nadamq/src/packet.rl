@@ -49,20 +49,20 @@
         start: (
             (startflag @startflag_received)
             (iuid >id_start $id_octet_received)
-            (ACK >type_received -> final |
+            (ACK >type_received @ack_received -> final |
              NACK >type_received -> ProcessingNack |
              DATA >type_received -> ProcessingData)
         ),
 
         ProcessingNack: (
-            length @length_received -> final
+            length @length_received @nack_received -> final
         ),
 
         ProcessingData: (
             (length @length_received @{ fcall process_payload; } %payload_end)
             (crc >crc_start $crc_byte_received @crc_received) -> final
         )
-    ) $!error;
+    ); # $!error;
     #) ${ std::cout << "[byte_received] " << std::hex << static_cast<int>(*p) << std::dec << std::endl; } $!error;
     main := Hub* ;
 }%%

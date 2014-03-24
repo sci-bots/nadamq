@@ -129,6 +129,21 @@ action crc_received {
   }
 }
 
+action ack_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[ack_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  message_completed_ = true;
+}
+
+action nack_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[nack_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  message_completed_ = true;
+  packet_->payload_length_ = payload_bytes_expected_;
+}
+
 action packet_err {
 #ifdef VERBOSE_STATES
   std::cout << "[packet_err]" << std::endl;

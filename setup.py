@@ -3,25 +3,26 @@ import sys
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 
-import packet_parser
+import nadamq
+import version
 
 
-include_dirs = packet_parser.get_includes()
+include_dirs = nadamq.get_includes()
 sys.path += include_dirs
 
 cy_config = dict(include_dirs=include_dirs, language='c++',
                  extra_compile_args=['-O3', '-Wfatal-errors'])
 
-cy_exts = [Extension('packet_parser.%s' % v, packet_parser.get_sources()
-                     + ['packet_parser/%s.pyx' % v], **cy_config)
-           for v in ('PacketParser', )]
+cy_exts = [Extension('nadamq.%s' % v, nadamq.get_sources()
+                     + ['nadamq/%s.pyx' % v], **cy_config)
+           for v in ('NadaMq', )]
 
-setup(name="packet_parser",
-      version="0.0.1",
-      description="Embedded command packet parser",
-      keywords="cython embedded packet parse",
-      author="Christian Fobel",
-      url="https://github.com/cfobel/packet_parser",
-      license="GPL",
-      packages=['packet_parser', ],
+setup(name='nadamq',
+      version=version.getVersion(),
+      description='Embedded-friendly transport layer, inspired by ZeroMQ',
+      keywords='cython embedded zeromq transport packet parse',
+      author='Christian Fobel',
+      url='https://github.com/cfobel/nadamq',
+      license='GPL',
+      packages=['nadamq', ],
       ext_modules=cythonize(cy_exts))

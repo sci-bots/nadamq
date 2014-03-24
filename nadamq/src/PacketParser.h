@@ -26,6 +26,7 @@ inline void crc_finalize(...) {}
 
 
 uint16_t update_crc(uint16_t crc, uint8_t data);
+uint16_t finalize_crc(uint16_t crc);
 
 
 class Parser {

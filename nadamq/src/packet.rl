@@ -52,6 +52,6 @@
     main := (
         (startflag $err(packet_err) @startflag_received)
         (header $err(packet_err) @{ fcall process_payload; } %payload_end)
-        (crc $err(packet_err) >crc_start @crc_received)
+        (crc $err(packet_err) >crc_start $crc_byte_received @crc_received)
     );
 }%%

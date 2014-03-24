@@ -50,6 +50,7 @@ action payload_start {
   packet_->reallocate_buffer(payload_bytes_expected_);
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
+  crc_ = crc_init();
 }
 
 action payload_byte_received {
@@ -76,15 +77,30 @@ action payload_end {
   std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
             << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+  crc_ = finalize_crc(crc_);
 }
 
 action crc_start {
-  crc_ = crc_init();
-  packet_->crc_ = (*p) << 8;
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_start]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  packet_->crc_ = 0;
+}
+
+action crc_byte_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  packet_->crc_ <<= 8;
+  packet_->crc_ += *p;
 }
 
 action crc_received {
-  packet_->crc_ += *p;
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_received]: "
+            << "from packet: " << packet_->crc_ << ", computed: " << crc_
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
   if (packet_->crc_ == crc_) {
     /* The CRC checksum computed based on payload contents matches the CRC
      * checksum included from the packet.  We assume the packet was
@@ -175,6 +191,13 @@ uint16_t update_crc(uint16_t crc, uint8_t data) {
     crc = _crc16_update(crc, data);
 #else
     crc = crc_update_byte(crc, data);
+#endif
+    return crc;
+}
+
+uint16_t finalize_crc(uint16_t crc) {
+#ifndef AVR
+    crc = crc_finalize(crc);
 #endif
     return crc;
 }

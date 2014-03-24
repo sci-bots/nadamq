@@ -1,7 +1,7 @@
 
 #line 1 "packet_actions.rl"
 
-#line 117 "packet_actions.rl"
+#line 133 "packet_actions.rl"
 
 
 #include <stdio.h>
@@ -23,7 +23,7 @@ static const int packet_grammar_en_process_payload = 11;
 static const int packet_grammar_en_main = 1;
 
 
-#line 124 "packet_actions.rl"
+#line 140 "packet_actions.rl"
 
 void PacketParser::reset() {
   /*
@@ -58,7 +58,7 @@ void PacketParser::reset() {
 	top = 0;
 	}
 
-#line 152 "packet_actions.rl"
+#line 168 "packet_actions.rl"
 }
 
 
@@ -163,7 +163,7 @@ f4:
 }
 	goto _again;
 f10:
-#line 55 "packet_actions.rl"
+#line 56 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
   std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
@@ -183,32 +183,8 @@ f10:
   }
 }
 	goto _again;
-f7:
-#line 86 "packet_actions.rl"
-	{
-  packet_->crc_ += *p;
-  if (packet_->crc_ == crc_) {
-    /* The CRC checksum computed based on payload contents matches the CRC
-     * checksum included from the packet.  We assume the packet was
-     * successfully received.
-     *
-     * TODO
-     * ====
-     *
-     * The CRC checksum should be computed from _all bytes in the packet_, not
-     * just the _payload_.  This will help to ensure that the identifier, type,
-     * etc. are not corrupted during transmission. */
-    message_completed_ = true;
-    /* Update payload length, since we successfully parsed the packet. */
-    packet_->payload_length_ = payload_bytes_received_;
-  } else {
-    /* Reset state of packet, since the parsing was not successful. */
-    parse_error_ = true;
-  }
-}
-	goto _again;
 f0:
-#line 108 "packet_actions.rl"
+#line 124 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
   std::cout << "[packet_err]" << std::endl;
@@ -257,8 +233,9 @@ f9:
   packet_->reallocate_buffer(payload_bytes_expected_);
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
+  crc_ = crc_init();
 }
-#line 55 "packet_actions.rl"
+#line 56 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
   std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
@@ -278,18 +255,65 @@ f9:
   }
 }
 	goto _again;
+f7:
+#line 90 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  packet_->crc_ <<= 8;
+  packet_->crc_ += *p;
+}
+#line 98 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_received]: "
+            << "from packet: " << packet_->crc_ << ", computed: " << crc_
+            << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  if (packet_->crc_ == crc_) {
+    /* The CRC checksum computed based on payload contents matches the CRC
+     * checksum included from the packet.  We assume the packet was
+     * successfully received.
+     *
+     * TODO
+     * ====
+     *
+     * The CRC checksum should be computed from _all bytes in the packet_, not
+     * just the _payload_.  This will help to ensure that the identifier, type,
+     * etc. are not corrupted during transmission. */
+    message_completed_ = true;
+    /* Update payload length, since we successfully parsed the packet. */
+    packet_->payload_length_ = payload_bytes_received_;
+  } else {
+    /* Reset state of packet, since the parsing was not successful. */
+    parse_error_ = true;
+  }
+}
+	goto _again;
 f6:
-#line 74 "packet_actions.rl"
+#line 75 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
   std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
             << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+  crc_ = finalize_crc(crc_);
 }
-#line 81 "packet_actions.rl"
+#line 83 "packet_actions.rl"
 	{
-  crc_ = crc_init();
-  packet_->crc_ = (*p) << 8;
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_start]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  packet_->crc_ = 0;
+}
+#line 90 "packet_actions.rl"
+	{
+#ifdef VERBOSE_STATES
+  std::cout << "[crc_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  packet_->crc_ <<= 8;
+  packet_->crc_ += *p;
 }
 	goto _again;
 
@@ -313,10 +337,11 @@ _again:
   packet_->reallocate_buffer(payload_bytes_expected_);
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
+  crc_ = crc_init();
 }
 	break;
 	case 1:
-#line 108 "packet_actions.rl"
+#line 124 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
   std::cout << "[packet_err]" << std::endl;
@@ -324,14 +349,14 @@ _again:
   parse_error_ = true;
 }
 	break;
-#line 328 "packet_actions.cpp"
+#line 353 "packet_actions.cpp"
 	}
 	}
 
 	_out: {}
 	}
 
-#line 170 "packet_actions.rl"
+#line 186 "packet_actions.rl"
 }
 
 
@@ -340,6 +365,13 @@ uint16_t update_crc(uint16_t crc, uint8_t data) {
     crc = _crc16_update(crc, data);
 #else
     crc = crc_update_byte(crc, data);
+#endif
+    return crc;
+}
+
+uint16_t finalize_crc(uint16_t crc) {
+#ifndef AVR
+    crc = crc_finalize(crc);
 #endif
     return crc;
 }

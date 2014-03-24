@@ -108,7 +108,7 @@ class VerbosePacketHandler : public PacketHandlerBase<Parser, Stream> {
 
   virtual void handle_packet(packet_type &packet) {
     std::cout << "# Packet parsed successfully #" << std::endl;
-    std::cout << std::setw(24) << "iuid: " << std::hex
+    std::cout << std::setw(24) << "iuid: " << std::dec
               << static_cast<int>(0x00FFFF & packet.iuid_) << std::endl;
     std::cout << std::setw(24) << "type: " << std::hex
               << static_cast<int>(0x00FF & packet.type()) << std::endl;

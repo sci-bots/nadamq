@@ -22,7 +22,7 @@ Depends(parser_pdf, 'parser_grammar.rl')
 
 Program(['test_parser.cpp', parser_actions], CCFLAGS=['-g', '-O0'])
 
-packet_actions = Object([packet_actions_src, 'crc-16.c'])
-                        #CPPDEFINES=['VERBOSE_STATES'])
+packet_actions = Object([packet_actions_src, 'crc-16.c'],
+                        CPPDEFINES=['VERBOSE_STATES'])
 Program(['test_packet_parser.cpp', packet_actions],
         CCFLAGS=['-g', '-O0'])

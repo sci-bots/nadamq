@@ -10,90 +10,35 @@ action startflag_received {
   message_completed_ = false;
 }
 
-action command_received {
+action id_start {
 #ifdef VERBOSE_STATES
-  std::cout << "[command_received]" << std::endl;
+  std::cout << "[id_start]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
-  packet_->command(*p);
+  /* Reset the interface unique packet identifier. */
+  packet_->iuid_ = 0;
 }
 
-action endflag_received {
+action id_octet_received {
 #ifdef VERBOSE_STATES
-  std::cout << "[endflag_received]" << std::endl;
+  std::cout << "[id_octet_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
-  uint16_t init_crc = crc_init();
-  if (crc_ == init_crc || crc_byte_count_ == 2) {
-    /* Either packet contains no CRC or we've received two CRC bytes. */
-    if (payload_bytes_expected_ == payload_bytes_received_) {
-      /* We've received an entire packet with the expected payload size, so
-       * update the completed status accordingly. */
-      message_completed_ = true;
-      if (crc_byte_count_ >= 2) {
-        /* A CRC was included in the packet. */
-        packet_->has_crc_ = true;
-      }
-      /* Update payload length, since we successfully parsed the packet. */
-      packet_->payload_length_ = payload_bytes_received_;
-    } else {
-      /* Reset state of packet, since the parsing was not successful. */
-      parse_error_ = true;
-    }
-  }
+  /* Shift previous contents of interface unique packet identifier 8-bits to
+   * the left, and write incoming byte as next byte of identifier. */
+  packet_->iuid_ = (packet_->iuid_ << 8) | *p;
 }
 
-action packet_err {
+action type_received {
 #ifdef VERBOSE_STATES
-  std::cout << "[packet_err]" << std::endl;
+  std::cout << "[type_received]: " << static_cast<int>(*p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
-  parse_error_ = true;
+  packet_->type(*p);
 }
 
-action payload_end {
+action length_received {
 #ifdef VERBOSE_STATES
-  std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
-            << payload_bytes_expected_ << std::endl;
+  std::cout << "[length_received]: " << static_cast<int>(*p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
-}
-
-action payloadlength_start {
-#ifdef VERBOSE_STATES
-  std::cout << "[payloadlength_start]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  // Reset received-bytes counter.
-  payload_bytes_expected_ = 0;
-}
-
-action payloadlength_msb {
-#ifdef VERBOSE_STATES
-  std::cout << "[payloadlength_msb]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  /* Received first octet of a two-octet payload-length.  Clear the top bit.
-   * Clear the top bit and shift over 8-bits, since this is just the
-   * _Most-Significant-Byte (MSB)_.
-   *
-   * See also: `payloadlength_lsb`.
-   */
-  payload_bytes_expected_ = (int)(((*p) & 0x7F)) << 8;
-}
-
-action payloadlength_lsb {
-#ifdef VERBOSE_STATES
-  std::cout << "[payloadlength_lsb]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  /* Received _Least-Significant-Byte (i.e., LSB)_ of a two-octet
-   * payload-length, so add value to previous MSB
-   *
-   * See also: `payloadlength_msb`.
-   */
-  payload_bytes_expected_ += (int)(*p);
-}
-
-action payloadlength_single {
-#ifdef VERBOSE_STATES
-  std::cout << "[payloadlength_single]" << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  /* Received single-octet payload-length. */
-  payload_bytes_expected_ = (int)(*p);
+  payload_bytes_expected_ = *p;
 }
 
 action payload_start {
@@ -126,15 +71,45 @@ action payload_byte_received {
   }
 }
 
+action payload_end {
+#ifdef VERBOSE_STATES
+  std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
+            << payload_bytes_expected_ << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+}
+
 action crc_start {
   crc_ = crc_init();
-  crc_byte_count_ = 1;
   packet_->crc_ = (*p) << 8;
 }
 
 action crc_received {
   packet_->crc_ += *p;
-  crc_byte_count_++;
+  if (packet_->crc_ == crc_) {
+    /* The CRC checksum computed based on payload contents matches the CRC
+     * checksum included from the packet.  We assume the packet was
+     * successfully received.
+     *
+     * TODO
+     * ====
+     *
+     * The CRC checksum should be computed from _all bytes in the packet_, not
+     * just the _payload_.  This will help to ensure that the identifier, type,
+     * etc. are not corrupted during transmission. */
+    message_completed_ = true;
+    /* Update payload length, since we successfully parsed the packet. */
+    packet_->payload_length_ = payload_bytes_received_;
+  } else {
+    /* Reset state of packet, since the parsing was not successful. */
+    parse_error_ = true;
+  }
+}
+
+action packet_err {
+#ifdef VERBOSE_STATES
+  std::cout << "[packet_err]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  parse_error_ = true;
 }
 
 include "packet.rl";
@@ -153,7 +128,7 @@ void PacketParser::reset() {
    *
    * If successful, return `true` and set:
    *
-   *  - `packet.command_`
+   *  - `packet.type_`
    *  - `packet.payload_buffer_`
    *  - `packet.payload_length_`
    *
@@ -170,7 +145,6 @@ void PacketParser::reset() {
    */
   packet_->reset();
   crc_ = 0;
-  crc_byte_count_ = 0;
   message_completed_ = false;
   parse_error_ = false;
 

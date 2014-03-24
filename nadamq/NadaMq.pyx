@@ -15,11 +15,9 @@ ctypedef uint16_t crc_t
 cdef class _Flags:
     cdef:
         readonly string START
-        readonly string END
 
     def __cinit__(self):
-        self.START = '~~s~~'
-        self.END = '!'
+        self.START = '|||'
 
 
 @cython.internal
@@ -46,17 +44,17 @@ cdef extern from "PacketParser.h":
         PACKET_TYPE_RESPONSE "Packet::packet_type::RESPONSE"
 
     cdef cppclass Packet:
+        uint16_t iuid_
         packet_type type_
         uint16_t payload_length_
         uint16_t buffer_size_
         uchar *payload_buffer_
-        bint has_crc_
         uint16_t crc_
 
         Packet()
         string data() except +
-        uchar command()
-        void command(uchar command_with_type_msb)
+        uchar type()
+        void type(uchar command_with_type_msb)
 
     cdef cppclass PacketParser:
         int payload_bytes_received_
@@ -92,27 +90,21 @@ cdef class cPacket:
     def data_ptr(self):
         return <size_t>self.thisptr.payload_buffer_
 
-    property has_crc:
-        def __get__(self):
-            return self.thisptr.has_crc_
-
     property crc:
         def __get__(self):
-            if not self.thisptr.has_crc_:
-                raise RuntimeError, 'Packet has no CRC'
             return self.thisptr.crc_
 
     property type_:
         def __get__(self):
-            return self.thisptr.type_
+            return self.thisptr.type()
         def __set__(self, value):
-            self.thisptr.type_ = value
+            self.thisptr.type(value)
 
-    property command:
+    property iuid:
         def __get__(self):
-            return self.thisptr.command()
+            return self.thisptr.iuid_
         def __set__(self, value):
-            self.thisptr.command(value)
+            self.thisptr.iuid_ = value
 
 
 cdef class cPacketParser:
@@ -165,25 +157,15 @@ def compute_crc16(data):
     return crc_finalize(crc)
 
 
-def get_packet_data(command_byte, payload, crc_checksum=False):
-    cre_command_byte = re.compile(r'0x[0-9a-fA-F]{2}')
-    match = cre_command_byte.match(command_byte)
-    if match is None:
-        raise ValueError, 'Invalid command byte: %s' % command_byte
-    command = chr(eval(command_byte))
+def get_packet_data(interface_unique_id, packet_type, payload):
+    iuid = (chr((interface_unique_id >> 8) & 0x0FF), chr(interface_unique_id & 0x0FF))
 
-    if crc_checksum:
-        crc = compute_crc16(payload)
-        packet_str = '%s%s%s%s%s' % (command, chr(len(payload)), payload,
+    crc = compute_crc16(payload)
+    packet_str = '%s%s%s%s%s%s%s' % (iuid[0], iuid[1], chr(packet_type),
+                                     chr(len(payload)), payload,
                                      chr((crc >> 8) & 0x0FF), chr(crc & 0x0FF))
-    else:
-        packet_str = '%s%s%s' % (command, chr(len(payload)), payload)
 
-    # Construct packet from:
-    #   * Command octet
-    #   * Payload data
-    #   * CRC checksum [if enabled]
-    return np.fromstring(FLAGS.START + packet_str + FLAGS.END, dtype='uint8')
+    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
 
 
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',

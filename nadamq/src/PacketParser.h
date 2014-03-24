@@ -65,7 +65,6 @@ public:
 protected:
   int stack[4];
   int top;
-  int crc_byte_count_;
 
   using base_type::cs;
   using base_type::p;
@@ -77,8 +76,7 @@ public:
   using base_type::state;
 
   PacketParser() : base_type(), payload_bytes_expected_(0),
-                   payload_bytes_received_(0), crc_(0), packet_(NULL),
-                   crc_byte_count_(0) {}
+                   payload_bytes_received_(0), crc_(0), packet_(NULL) {}
 
   void reset();
   void reset(Packet *packet) {
@@ -117,19 +115,6 @@ public:
       return 0;
     }
   }
-
-  bool verified() {
-    /* Packet parse should fail verification if the packet contained a CRC
-     * checksum and it did not match the checksum computed from scratch, due to
-     * either:
-     *
-     *   - A parsing error.
-     *   - A CRC checksum mismatch.
-     */
-    return (!packet_->has_crc_ || (packet_->has_crc_ && (packet_->crc_ !=
-                                                         crc_)));
-  }
-
 };
 
 #endif

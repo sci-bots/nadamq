@@ -1,59 +1,38 @@
 from nose.tools import ok_, eq_
-from nadamq.NadaMq import (cPacketParser, get_packet_data, PACKET_NAME_BY_TYPE,
+from nadamq.NadaMq import (cPacketParser, create_ack_packet_bytes,
+                           compute_crc16, create_data_packet_bytes,
+                           create_nack_packet_bytes, PACKET_NAME_BY_TYPE,
                            PACKET_TYPES)
 
 
-def parse_demo(interface_unique_id, packet_type, payload):
-    packet_data = get_packet_data(interface_unique_id, packet_type, payload)
+def test_parse_data():
     parser = cPacketParser()
-    packet = parser.parse(packet_data)
-    print 'packet_type: %s' % PACKET_NAME_BY_TYPE[packet.type_]
-    print 'command: %s' % hex(packet.iuid)
-    print 'payload: "%s"' % packet.data()
-    print 'CRC matched: %s' % hex(packet.crc)
-    return packet
-
-
-def main():
-    args = parse_args()
-
-    parse_demo(args.command_byte, args.payload, args.crc)
-
-
-def test_parse_request():
-    packet = parse_demo(97, PACKET_TYPES.REQUEST, 'hello')
-    eq_(packet.type_, PACKET_TYPES.REQUEST)
+    packet = parser.parse(create_data_packet_bytes(97, 'hello'))
+    eq_(packet.type_, PACKET_TYPES.DATA)
     eq_(packet.iuid, 97)
+    eq_(packet.crc, compute_crc16('hello'))
     eq_(packet.data(), 'hello')
 
-    packet = parse_demo(10, PACKET_TYPES.REQUEST, 'world')
-    eq_(packet.type_, PACKET_TYPES.REQUEST)
+    packet = parser.parse(create_data_packet_bytes(10, 'world'))
+    eq_(packet.type_, PACKET_TYPES.DATA)
     eq_(packet.iuid, 10)
+    eq_(packet.crc, compute_crc16('world'))
     eq_(packet.data(), 'world')
 
 
-def test_parse_response():
-    packet = parse_demo(71, PACKET_TYPES.RESPONSE, 'foo')
-    eq_(packet.type_, PACKET_TYPES.RESPONSE)
-    eq_(packet.iuid, 71)
-    eq_(packet.data(), 'foo')
-
-    packet = parse_demo(32, PACKET_TYPES.RESPONSE, 'bar')
-    eq_(packet.type_, PACKET_TYPES.RESPONSE)
-    eq_(packet.iuid, 32)
-    eq_(packet.data(), 'bar')
+def test_parse_ack():
+    parser = cPacketParser()
+    packet = parser.parse(create_ack_packet_bytes(1231))
+    eq_(packet.type_, PACKET_TYPES.ACK)
+    eq_(packet.iuid, 1231)
 
 
-def parse_args():
-    """Parses arguments, returns (options, args)."""
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description='Create packet and parse using '
-                            '`PacketParser`.')
-    parser.add_argument(dest='command_byte')
-    parser.add_argument(dest='payload')
-    parser.add_argument('--crc', action='store_true', default=False)
-    args = parser.parse_args()
-    return args
+def test_parse_nack():
+    parser = cPacketParser()
+    packet = parser.parse(create_nack_packet_bytes(4328))
+    eq_(packet.type_, PACKET_TYPES.NACK)
+    eq_(packet.iuid, 4328)
 
-if __name__ == '__main__':
-    main()
+    packet = parser.parse(create_nack_packet_bytes(128, max_packet_length=13))
+    eq_(packet.type_, PACKET_TYPES.NACK)
+    eq_(packet.iuid, 128)

@@ -1,13 +1,14 @@
-packet_actions_src = Command('packet_queue_fsm.cpp', 'packet_queue_fsm.rl',
-                             'ragel -G1 -o $TARGET $SOURCE')
-packet_dot = Command('packet_queue_fsm.dot', 'packet_queue_fsm.rl',
-                     'ragel -V -p -o $TARGET $SOURCE')
-packet_pdf = Command('packet_queue_fsm.pdf', packet_dot,
-                     'dot -Tpdf -o $TARGET $SOURCE')
+socket_fsm_src = Command('packet_socket_fsm_actions.cpp',
+                         'packet_socket_fsm_actions.rl',
+                         'ragel -G1 -o $TARGET $SOURCE')
+socket_fsm_dot = Command('packet_socket_fsm.dot', 'packet_socket_fsm_actions.rl',
+                         'ragel -V -p -o $TARGET $SOURCE')
+socket_fsm_pdf = Command('packet_socket_fsm.pdf', socket_fsm_dot,
+                         'dot -Tpdf -o $TARGET $SOURCE')
 
-Depends(packet_actions_src, 'packet.rl')
-Depends(packet_dot, 'packet.rl')
-Depends(packet_pdf, 'packet.rl')
+Depends(socket_fsm_src, 'packet_socket_fsm.rl')
+Depends(socket_fsm_dot, 'packet_socket_fsm.rl')
+Depends(socket_fsm_pdf, 'packet_socket_fsm.rl')
 
 packet_actions_src = Command('packet_actions.cpp', 'packet_actions.rl',
                              'ragel -G1 -o $TARGET $SOURCE')
@@ -24,3 +25,4 @@ packet_actions = Object([packet_actions_src, 'crc-16.c'])
                         #CPPDEFINES=['VERBOSE_STATES'])
 Program(['test_packet_parser.cpp', packet_actions],
         CCFLAGS=['-g', '-O0'])
+Program(['test_packet_socket.cpp', socket_fsm_src], CCFLAGS=['-g', '-O0'])

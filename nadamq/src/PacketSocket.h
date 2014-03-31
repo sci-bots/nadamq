@@ -9,6 +9,7 @@
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>
+#include <iomanip>
 using namespace std;
 #endif // ifndef AVR
 
@@ -61,7 +62,15 @@ protected:
     event_queue_.push(rx_packet_.type());
   }
 
-  virtual void handle_data_packet() { event_queue_.push('q'); }
+  virtual void handle_data_packet() {
+    std::cout << std::setw(23) << "data payload : " << "'"
+              << std::string((char *)rx_packet_.payload_buffer_,
+                             rx_packet_.payload_length_) << "'" << std::endl;
+    /* Need to deallocate buffer here until we transfer ownership to somewhere
+     * else, e.g., packet-stream. */
+    rx_packet_.deallocate_buffer();
+    event_queue_.push('q');
+  }
   virtual void handle_ack_packet() { event_queue_.push('Y'); }
   virtual void handle_nack_packet() { event_queue_.push('N'); }
 public:
@@ -153,7 +162,7 @@ public:
   virtual void update_rx_queue() {
     /* The stream parser has a full packet ready.  Push a copy of the full
      * packet onto the receiving queue. */
-    push_rx_packet(parser_.packet());
+    push_rx_packet(parser_.packet().clone());
 
     /* Reset the stream parser to prepare for parsing the next packet. */
     parser_.reset();

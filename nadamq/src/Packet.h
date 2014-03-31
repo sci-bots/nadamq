@@ -9,6 +9,8 @@
 using namespace std;
 #endif
 
+#include <string.h>
+
 
 class Packet {
 public:
@@ -69,6 +71,16 @@ public:
   }
 
   //~Packet() { deallocate_buffer(); }
+
+  Packet clone() const {
+    Packet packet = *this;
+    packet.payload_buffer_ = NULL;
+    packet.buffer_size_ = 0;
+    packet.reallocate_buffer(this->buffer_size_);
+    strncpy((char *)packet.payload_buffer_, (char *)this->payload_buffer_,
+            this->payload_length_);
+    return packet;
+  }
 
 #ifndef AVR
   /*

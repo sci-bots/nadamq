@@ -191,7 +191,7 @@ f10:
 	goto _again;
 f0:
 #line 19 "packet_socket_fsm_actions.rl"
-	{}
+	{ read_stream(); }
 	goto _again;
 f2:
 #line 20 "packet_socket_fsm_actions.rl"
@@ -207,7 +207,7 @@ f19:
 	goto _again;
 f7:
 #line 25 "packet_socket_fsm_actions.rl"
-	{}
+	{ update_rx_queue(); }
 	goto _again;
 f15:
 #line 13 "packet_socket_fsm_actions.rl"

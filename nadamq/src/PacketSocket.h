@@ -35,11 +35,16 @@ public:
   virtual void handle_data_packet() = 0;
   virtual void handle_ack_packet() = 0;
   virtual void handle_nack_packet() = 0;
+  virtual void read_stream() = 0;
+  virtual void update_rx_queue() = 0;
 };
 
 
-template <typename Packet>
-class SerialPacketSocket : public PacketSocket {
+template <typename StreamPacketParser>
+class StreamPacketSocket : public PacketSocket {
+public:
+  typedef PacketSocket base_type;
+  typedef typename StreamPacketParser::packet_type packet_type;
 protected:
   bool push_event(uint8_t event) { return event_queue_.push(event); }
 
@@ -53,22 +58,23 @@ protected:
     }
     rx_queue_.pop(rx_packet_);
     /* Packet type should be: `d` _(data)_, `a` _(ack)_, or `n` _(nack)_. */
-    event_queue_.push(rx_packet_.type);
+    event_queue_.push(rx_packet_.type());
   }
 
   virtual void handle_data_packet() { event_queue_.push('q'); }
   virtual void handle_ack_packet() { event_queue_.push('Y'); }
   virtual void handle_nack_packet() { event_queue_.push('N'); }
 public:
-  CircularBuffer<Packet> rx_queue_;
-  CircularBuffer<Packet> tx_queue_;
+  StreamPacketParser &parser_;
+  CircularBuffer<packet_type> rx_queue_;
+  CircularBuffer<packet_type> tx_queue_;
   CircularBuffer<uint8_t> event_queue_;
-  Packet rx_packet_;
-  Packet tx_packet_;
+  packet_type rx_packet_;
+  packet_type tx_packet_;
 
-  SerialPacketSocket(size_t event_queue_length, size_t rx_queue_length,
-                     size_t tx_queue_length)
-    : PacketSocket(), event_queue_(event_queue_length),
+  StreamPacketSocket(StreamPacketParser &parser, size_t event_queue_length,
+                     size_t rx_queue_length, size_t tx_queue_length)
+    : PacketSocket(), parser_(parser), event_queue_(event_queue_length),
       rx_queue_(rx_queue_length), tx_queue_(tx_queue_length) {
     /* Push initialization event. */
     push_event('i');
@@ -88,6 +94,11 @@ public:
          * `tx_packet_queued` event onto queue to trigger the next packet to be
          * sent. */
         push_event('O');  // `O` -> `tx_packet_queued` event
+      } else if (parser_.available() > 0) {
+        /* There is data ready on the input stream. Push `rx_stream_available`
+         * event onto queue to trigger the set of available bytes to be read
+         * from the stream. */
+        push_event('A');  // `A` -> `rx_stream_available` event
       }
     }
     return event_queue_.available();
@@ -101,10 +112,51 @@ public:
     return event;
   }
 
-  bool push_rx_packet(Packet packet) {
+  bool push_rx_packet(packet_type packet) {
     /* Add a packet to the incoming queue. */
     bool result = rx_queue_.push(packet);
     return result;
+  }
+
+  virtual void read_stream() {
+    /* This method is triggered by the `rx_stream_available` event. */
+    parser_.parse_available();
+    if (parser_.ready()) {
+      if (rx_queue_.isFull()) {
+        /* A full packet has been parsed successfully, but there is no room in
+         * the input queue. Push `queue_full` event onto queue to trigger
+         * handling of queue full error. */
+        push_event('f');  // `f` -> `queue_full`
+      } else {
+        /* A full packet has been parsed successfully.  Push `packet_ready` event
+         * onto queue to trigger update of receiving packet queue. */
+        push_event('r');  // `r` -> `packet_ready`
+      }
+    } else if (parser_.error() != 0) {
+      /* An error occurred while parsing from the input stream.  Push an event
+       * corresponding to the returned error-code onto the event queue to
+       * process the error as necessary. */
+      switch (parser_.error()) {
+        case 'e':
+          push_event('e');
+          break;
+        case 'L':
+          push_event('L');
+          break;
+        default:
+          push_event('e');
+          break;
+      }
+    }
+  }
+
+  virtual void update_rx_queue() {
+    /* The stream parser has a full packet ready.  Push a copy of the full
+     * packet onto the receiving queue. */
+    push_rx_packet(parser_.packet());
+
+    /* Reset the stream parser to prepare for parsing the next packet. */
+    parser_.reset();
   }
 };
 

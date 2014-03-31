@@ -12,7 +12,7 @@ using namespace std;
 
 class Packet {
 public:
-  struct packet_type { enum EnumType {NONE, ACK=5, NACK=6, DATA=7}; };
+  struct packet_type { enum EnumType {NONE, ACK='a', NACK='n', DATA='d'}; };
 
   /* Interface unique identifier. */
   uint16_t iuid_;
@@ -68,9 +68,7 @@ public:
     }
   }
 
-  ~Packet() {
-    deallocate_buffer();
-  }
+  //~Packet() { deallocate_buffer(); }
 
 #ifndef AVR
   /*

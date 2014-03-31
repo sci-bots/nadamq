@@ -34,9 +34,9 @@
     payload = OCTET*;
     crc = OCTET{2};
 
-    ACK = 0x05;
-    NACK = 0x06;
-    DATA = 0x07;
+    ACK = 'a';
+    NACK = 'n';
+    DATA = 'd';
 
     # The `process_payload` state machine parses incoming bytes into the packet
     # buffer until the expected number of bytes has been read.

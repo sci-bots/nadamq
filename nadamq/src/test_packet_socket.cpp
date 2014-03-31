@@ -5,6 +5,8 @@
 #include <iomanip>  // `std::setw`
 
 #include "PacketSocket.h"
+#include "Packet.h"
+#include "PacketHandler.h"
 #include "PacketSocketEvents.h"
 #include "stream.hpp"
 
@@ -33,30 +35,30 @@ int main(int argc, const char *argv[]) {
 
   std::cout << std::setw(20) << "events: " << argv[1] << std::endl;
 
-  typedef DummyPacket<32> Packet;
-  SerialPacketSocket<Packet> socket(128, 10, 10);
-  socket.reset();
+  Packet packet;
+  PacketParser parser;
+  parser.reset(&packet);
 
-  socket.push_rx_packet(Packet('d'));
-  socket.push_rx_packet(Packet('a'));
-  socket.push_rx_packet(Packet('n'));
-  socket.push_rx_packet(Packet('d'));
-  socket.push_rx_packet(Packet('d'));
-  socket.push_rx_packet(Packet('d'));
+  typedef StreamWrapper<std::ifstream, 128> Stream;
 
-  //for (const char *event = argv[1]; *event != '\0'; event++) {
-    //socket.push_event(*event);
-  //}
+  std::ifstream input(argv[1], std::ifstream::binary);
+  if (input) {
+    Stream wrapper(input);
+    StreamPacketParser<PacketParser, Stream> stream_parser(parser, wrapper);
+    StreamPacketSocket<StreamPacketParser<PacketParser, Stream> >
+      socket(stream_parser, 128, 10, 10);
+    socket.reset();
 
-  std::cout << std::endl << "## State transitions ##" << std::endl;
+    std::cout << std::endl << "## State transitions ##" << std::endl;
 
-  while (socket.available() > 0) {
-    uint8_t event = socket.pop_event();
+    while (socket.available() > 0) {
+      uint8_t event = socket.pop_event();
 
-    std::stringstream out;
-    out << "`" << event_label(event) << "`" << " [`" << event << "`]";
-    std::cout << std::setw(28) << out.str() << " -> state: "
-              << socket.state() << std::endl;
+      std::stringstream out;
+      out << "`" << event_label(event) << "`" << " [`" << event << "`]";
+      std::cout << std::setw(28) << out.str() << " -> state: "
+                << socket.state() << std::endl;
+    }
   }
   return 0;
 }

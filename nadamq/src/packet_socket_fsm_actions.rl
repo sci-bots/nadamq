@@ -16,13 +16,13 @@ action queue_full {}
 action queue_nack_data_too_large {}
 action queue_nack_parse_error {}
 action queue_nack_queue_full {}
-action read_stream {}
+action read_stream { read_stream(); }
 action recv { process_rx_packet(); }
 action requeue_packet {}
 action send {}
 action sent {}
 action split_and_queue_packet {}
-action update_rx_queue {}
+action update_rx_queue { update_rx_queue(); }
 
 include "packet_socket_fsm.rl";
 

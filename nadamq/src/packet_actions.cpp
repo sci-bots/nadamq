@@ -105,9 +105,9 @@ case 4:
 	goto tr4;
 case 5:
 	switch( (*p) ) {
-		case 5u: goto tr5;
-		case 6u: goto tr6;
-		case 7u: goto tr7;
+		case 97u: goto tr5;
+		case 100u: goto tr6;
+		case 110u: goto tr7;
 	}
 	goto tr1;
 case 6:
@@ -131,11 +131,11 @@ case 12:
 	tr3: cs = 4; goto f1;
 	tr4: cs = 5; goto f2;
 	tr6: cs = 6; goto f4;
-	tr7: cs = 7; goto f4;
+	tr8: cs = 7; goto f5;
 	tr9: cs = 8; goto f6;
-	tr10: cs = 9; goto f7;
+	tr7: cs = 9; goto f4;
 	tr5: cs = 10; goto f3;
-	tr8: cs = 10; goto f5;
+	tr10: cs = 10; goto f7;
 	tr11: cs = 10; goto f8;
 	tr13: cs = 12; goto f10;
 	tr14: cs = 12; goto f11;
@@ -226,7 +226,7 @@ f3:
   message_completed_ = true;
 }
 	goto _again;
-f5:
+f8:
 #line 45 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -243,7 +243,7 @@ f5:
   packet_->payload_length_ = payload_bytes_expected_;
 }
 	goto _again;
-f6:
+f5:
 #line 45 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -287,7 +287,7 @@ f10:
   }
 }
 	goto _again;
-f8:
+f7:
 #line 98 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES
@@ -323,7 +323,7 @@ f8:
   }
 }
 	goto _again;
-f7:
+f6:
 #line 83 "packet_actions.rl"
 	{
 #ifdef VERBOSE_STATES

@@ -25,5 +25,5 @@ packet_actions = Object([packet_actions_src, 'crc-16.c'])
                         #CPPDEFINES=['VERBOSE_STATES'])
 Program(['test_packet_parser.cpp', packet_actions],
         CCFLAGS=['-g', '-O0'])
-Program(['test_packet_socket.cpp', socket_fsm_src], CCFLAGS=['-g', '-O0'])
+Program(['test_packet_socket.cpp', socket_fsm_src, packet_actions], CCFLAGS=['-g', '-O0'])
 Program(['test_circular_buffer.cpp'], CCFLAGS=['-g', '-O0'])

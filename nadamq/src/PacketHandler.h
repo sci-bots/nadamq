@@ -26,8 +26,8 @@ class StreamPacketParser {
    *    _(accessible through the `packet()` method)_.
    *  - `error()`: Returns error code if there was an error parsing the
    *    current packet.
-   *   - `-5`: Data too large for buffer.
-   *   - `-10`: Parse error, e.g., failed checksum.
+   *   - `L`: Data too large for buffer.
+   *   - `e`: Parse error, e.g., failed checksum.
    *  - `packet(Packet &output)`: Copy current packet contents to `output`.
    *
    * ## Mutators ##
@@ -49,21 +49,32 @@ public:
     : parser_(parser), stream_(stream) {}
 
   virtual bool ready() { return parser_.message_completed_; }
-  virtual bool error() { return parser_.parse_error_; }
+  virtual uint8_t error() {
+    if (parser_.parse_error_) {
+      return 'e';
+    }
+  }
+  virtual void reset() { parser_.reset(); }
+  virtual packet_type const &packet() const { return *parser_.packet_; }
 
-  virtual void parse_available() {
+  virtual int available() { return stream_.available(); }
+
+  virtual int parse_available() {
     /* We have encountered an error, or we have parsed a full packet
      * successfully.  The state of the parser must be explicitly reset using
      * the `reset()` method before we continue parsing. */
-    if (ready() || error()) { return; }
+    if (ready() || error()) { return 0; }
 
+    int bytes_read = 0;
     while (stream_.available() > 0) {
       uint8_t byte = stream_.read();
       parser_.parse_byte(&byte);
+      bytes_read++;
       /* Continue parsing until we have encountered an error, or we have parsed
        * a full packet successfully. */
       if (ready() || error()) { break; }
     }
+    return bytes_read;
   }
 };
 
@@ -91,6 +102,7 @@ public:
   using base_type::stream_;
   using base_type::ready;
   using base_type::error;
+  using base_type::reset;
 
   PacketHandlerBase(Parser &parser, Stream &stream)
     : base_type(parser, stream) {}
@@ -101,9 +113,10 @@ public:
   /* Enable special handling of parse errors. */
   virtual void handle_error(packet_type &packet) {}
 
-  void parse_available() {
+  virtual int parse_available() {
+    int bytes_read = 0;
     while (stream_.available() > 0) {
-      base_type::parse_available();
+      bytes_read += base_type::parse_available();
 
       /* If we've encountered an error or successfully parsed a packet, call the
        * corresponding handler method. */
@@ -111,7 +124,7 @@ public:
         /* Parse error */
         handle_error(*(parser_.packet_));
         /* Reset parser to process next packet. */
-        parser_.reset();
+        reset();
       } else if (ready()) {
         /* # Process packet #
           *
@@ -122,9 +135,10 @@ public:
           * input scan. */
         handle_packet(*(parser_.packet_));
         /* Reset parser to process next packet. */
-        parser_.reset();
+        reset();
       }
     }
+    return bytes_read;
   }
 };
 

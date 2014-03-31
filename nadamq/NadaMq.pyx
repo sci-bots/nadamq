@@ -1,3 +1,4 @@
+#cython: embedsignature=True
 cimport cython
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t

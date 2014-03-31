@@ -10,39 +10,47 @@ int main() {
   std::cout << "# Fill buffer with 10 elements #" << std::endl << std::endl;
 
   for (unsigned int i=1; i <= 10; i++) {
-    if (cb.write(i)) {
-      cout << "    " << i << ", r" << cb.read_index() << ", w"
-           << cb.write_index() << endl;
+    if (cb.push(i)) {
+      cout << "    " << i << " (occupancy: " << cb.available() << "/" << cb.size() << ")"
+           << std::endl;
     } else {
-      cout << "    Could not write " << i << " - buffer full." << std::endl;
+      cout << "    Could not push " << i << " - buffer full." << std::endl;
     }
   }
 
-  std::cout << std::endl << "# Read 5 elements #" << std::endl << std::endl;
+  std::cout << std::endl << "# pop 5 elements #" << std::endl << std::endl;
 
   for (unsigned int i=1; i <= 5; i++) {
-    cb.read(&val);
-    cout << "    " << val << ", r" << cb.read_index() << ", w" << cb.write_index() << endl;
+    cb.pop(val);
+    cout << "    " << val << " (occupancy: " << cb.available() << "/" << cb.size() << ")"
+         << std::endl;
   }
 
   std::cout << std::endl << "# Fill buffer with 10 elements #" << std::endl << std::endl;
 
   for (unsigned int i=10; i <= 23; i++) {
-    if (cb.write(i)) {
-      cout << "    " << i << ", r" << cb.read_index() << ", w"
-           << cb.write_index() << endl;
+    if (cb.push(i)) {
+      cout << "    " << i << " (occupancy: " << cb.available() << "/" << cb.size() << ")"
+           << std::endl;
     } else {
-      cout << "    Could not write " << i << " - buffer full." << std::endl;
+      cout << "    Could not push " << i << " - buffer full." << std::endl;
     }
   }
 
-  std::cout << std::endl << "# Read buffer #" << std::endl << std::endl;
+  std::cout << std::endl << "# pop buffer #" << std::endl << std::endl;
   while(!cb.isEmpty()) {
-    if (!cb.read(&val)) {
-      cout << "    " << val << ", r" << cb.read_index() << ", w" << cb.write_index() << endl;
-    } else {
-      cout << "    Could not read - buffer empty." << std::endl;
-    }
+    cb.pop(val);
+    cout << "    " << val << " (occupancy: " << cb.available() << "/" << cb.size() << ")"
+         << std::endl;
   }
+
+  unsigned int i = 100;
+  while(!cb.isFull()) {
+    cb.push(i);
+    cout << "    " << i << " (occupancy: " << cb.available() << "/" << cb.size() << ")"
+         << std::endl;
+    i--;
+  }
+
   return 0;
 }

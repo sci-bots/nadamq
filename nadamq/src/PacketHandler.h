@@ -13,17 +13,87 @@
 
 
 template <typename Parser, typename Stream>
-class PacketHandlerBase {
-  public:
-
+class StreamPacketParser {
+  /* # `StreamPacketParser` #
+   *
+   * Provide the following API described below to read full packets from a
+   * stream.
+   *
+   * ## Accessors ##
+   *
+   *  - `available()`: `true` if there is data ready on the stream.
+   *  - `ready()`: `true` if a packet has been parsed successfully
+   *    _(accessible through the `packet()` method)_.
+   *  - `error()`: Returns error code if there was an error parsing the
+   *    current packet.
+   *   - `-5`: Data too large for buffer.
+   *   - `-10`: Parse error, e.g., failed checksum.
+   *  - `packet(Packet &output)`: Copy current packet contents to `output`.
+   *
+   * ## Mutators ##
+   *
+   *  - `read_available()`: Parse available characters from the stream.  Stop
+   *    parsing if either a full packet has been parsed, or if an error is
+   *    encountered.
+   *  - `reset()`: Reset state of parser.  __NB__ After parsing a complete
+   *    packet or encountering an error, this method must be called before
+   *    `parse_available()` will parse any new characters. */
+public:
   /* Infer type of packet from `Parser` type. */
   typedef typename Parser::packet_type packet_type;
 
   Parser &parser_;
   Stream &stream_;
 
-  PacketHandlerBase(Parser &parser, Stream &stream)
+  StreamPacketParser(Parser &parser, Stream &stream)
     : parser_(parser), stream_(stream) {}
+
+  virtual bool ready() { return parser_.message_completed_; }
+  virtual bool error() { return parser_.parse_error_; }
+
+  virtual void parse_available() {
+    /* We have encountered an error, or we have parsed a full packet
+     * successfully.  The state of the parser must be explicitly reset using
+     * the `reset()` method before we continue parsing. */
+    if (ready() || error()) { return; }
+
+    while (stream_.available() > 0) {
+      uint8_t byte = stream_.read();
+      parser_.parse_byte(&byte);
+      /* Continue parsing until we have encountered an error, or we have parsed
+       * a full packet successfully. */
+      if (ready() || error()) { break; }
+    }
+  }
+};
+
+
+template <typename Parser, typename Stream>
+class PacketHandlerBase : public StreamPacketParser<Parser, Stream> {
+  /* # `PacketHandlerBase` #
+   *
+   * Extend the `StreamPacketParser` API to read as many full packets as are
+   * available from a stream for each call to `parse_available()` _(as opposed
+   * to stopping after each completed packet or error)_.  This implements a
+   * "reactor"-style parser using handler methods for handling success and
+   * error cases.
+   *
+   * ## New methods ##
+   *
+   *  - `handle_packet(packet_type &packet)`: Handle a successfully parsed packet.
+   *  - `handle_error(packet_type &packet)`: Handle an error, provided with the
+   *    contents of the incomplete parsed packet. */
+public:
+  typedef StreamPacketParser<Parser, Stream> base_type;
+  typedef typename base_type::packet_type packet_type;
+
+  using base_type::parser_;
+  using base_type::stream_;
+  using base_type::ready;
+  using base_type::error;
+
+  PacketHandlerBase(Parser &parser, Stream &stream)
+    : base_type(parser, stream) {}
 
   /* No default behaviour for handling a successfully parse packet.  This
    * method must be implemented in a concrete sub-class. */
@@ -33,23 +103,23 @@ class PacketHandlerBase {
 
   void parse_available() {
     while (stream_.available() > 0) {
-      uint8_t byte = stream_.read();
+      base_type::parse_available();
 
-      parser_.parse_byte(&byte);
-
-      if(parser_.parse_error_) {
+      /* If we've encountered an error or successfully parsed a packet, call the
+       * corresponding handler method. */
+      if(error()) {
         /* Parse error */
         handle_error(*(parser_.packet_));
+        /* Reset parser to process next packet. */
         parser_.reset();
-      } else
-      if (parser_.message_completed_) {
+      } else if (ready()) {
         /* # Process packet #
-         *
-         * Do something with successfully parsed packet.
-         *
-         * Note that the packet should be copied if it will be needed
-         * afterwards, since the packet will be reset below, before the next
-         * input scan. */
+          *
+          * Do something with successfully parsed packet.
+          *
+          * Note that the packet should be copied if it will be needed
+          * afterwards, since the packet will be reset below, before the next
+          * input scan. */
         handle_packet(*(parser_.packet_));
         /* Reset parser to process next packet. */
         parser_.reset();
@@ -62,6 +132,11 @@ class PacketHandlerBase {
 #ifdef AVR
 template <typename Parser, typename IStream, typename OStream>
 class VerbosePacketHandler : public PacketHandlerBase<Parser, IStream> {
+  /* # `VerbosePacketHandler` _(`AVR`-variant, Arduino-compatible)_ #
+   *
+   * This class implements a simple packet parsing reactor, which dumps a
+   * message to the provided output stream whenever either a packet is
+   * successfully parsed or an error is encountered. */
   public:
 
   typedef PacketHandlerBase<Parser, IStream> base_type;
@@ -96,6 +171,11 @@ class VerbosePacketHandler : public PacketHandlerBase<Parser, IStream> {
 #else
 template <typename Parser, typename Stream>
 class VerbosePacketHandler : public PacketHandlerBase<Parser, Stream> {
+  /* # `VerbosePacketHandler` _(STL-variant)_ #
+   *
+   * This class implements a simple packet parsing reactor, which dumps a
+   * message to the provided output stream whenever either a packet is
+   * successfully parsed or an error is encountered. */
   public:
 
   typedef PacketHandlerBase<Parser, Stream> base_type;

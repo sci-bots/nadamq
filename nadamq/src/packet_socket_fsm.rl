@@ -80,16 +80,16 @@
         ProcessAck: (
             # Packet that was acknowledged is still on output queue.  Since the
             # receiver has acknowledged receipt, we can pop it off the queue.
-            packet_found @pop_packet -> Idle |
+            packet_found @pop_packet @finished_rx -> Idle |
             # Packet that was acknowledged was not found, so there is nothing
             # to do.
-            packet_not_found -> Idle
+            packet_not_found @finished_rx -> Idle
         ),
 
         ProcessNack: (
             # The receiver reported a parse error _(e.g., checksum mismatch)_.
             #  - Queue the packet to be resent _(if possible)_.
-            parse_error @requeue_packet -> Idle |
+            parse_error @requeue_packet @finished_rx -> Idle |
 
             # The receiver reported that it could not receive the packet,
             # because there was not enough buffer space available at the time
@@ -102,18 +102,21 @@
             # We might want to add a delay before trying to resend. Perhaps we
             # can add delays to packets in the transmission queue?
             #  - Probably overkill for now...
-            queue_full @requeue_packet -> Idle |
+            queue_full @requeue_packet @finished_rx -> Idle |
 
             # The receiver reported that the packet was too large to fit in its
             # buffer.
             #  - Split the packet into smaller packets and queue the resulting
             #    packets for sending.
-            data_too_large @split_and_queue_packet -> Idle
+            data_too_large @split_and_queue_packet @finished_rx -> Idle |
+            # Packet that was acknowledged was not found, so there is nothing
+            # to do.
+            packet_not_found @finished_rx -> Idle
         ),
 
         ProcessData: (
             # The data packet was successfully added to the data queue.
-            queued_ok @queue_ack -> Idle
+            queued_ok @queue_ack @finished_rx -> Idle
         )
     );
 

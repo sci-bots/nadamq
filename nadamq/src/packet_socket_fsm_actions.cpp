@@ -1,7 +1,7 @@
 
 #line 1 "packet_socket_fsm_actions.rl"
 
-#line 28 "packet_socket_fsm_actions.rl"
+#line 29 "packet_socket_fsm_actions.rl"
 
 
 #include <stdio.h>
@@ -17,7 +17,7 @@ static const int packet_socket_fsm_error = 0;
 static const int packet_socket_fsm_en_main = 9;
 
 
-#line 35 "packet_socket_fsm_actions.rl"
+#line 36 "packet_socket_fsm_actions.rl"
 
 void PacketSocket::reset() {
   
@@ -26,7 +26,7 @@ void PacketSocket::reset() {
 	cs = packet_socket_fsm_start;
 	}
 
-#line 38 "packet_socket_fsm_actions.rl"
+#line 39 "packet_socket_fsm_actions.rl"
 }
 
 
@@ -55,7 +55,7 @@ _resume:
 	switch ( cs ) {
 case 9:
 	if ( (*p) == 105 )
-		goto tr21;
+		goto tr22;
 	goto tr1;
 case 0:
 	goto _out;
@@ -93,24 +93,26 @@ case 4:
 	goto tr1;
 case 5:
 	switch( (*p) ) {
-		case 78: goto tr6;
-		case 89: goto tr16;
+		case 78: goto tr16;
+		case 89: goto tr17;
 	}
 	goto tr1;
 case 6:
 	if ( (*p) == 113 )
-		goto tr17;
+		goto tr18;
 	goto tr1;
 case 7:
-	if ( (*p) == 76 )
-		goto tr18;
+	switch( (*p) ) {
+		case 76: goto tr19;
+		case 78: goto tr16;
+	}
 	if ( 101 <= (*p) && (*p) <= 102 )
-		goto tr19;
+		goto tr20;
 	goto tr1;
 case 8:
 	switch( (*p) ) {
 		case 78: goto tr6;
-		case 115: goto tr20;
+		case 115: goto tr21;
 	}
 	goto tr1;
 	}
@@ -127,6 +129,7 @@ case 8:
 	tr19: cs = 1; goto f17;
 	tr20: cs = 1; goto f18;
 	tr21: cs = 1; goto f19;
+	tr22: cs = 1; goto f20;
 	tr0: cs = 2; goto f0;
 	tr5: cs = 3; goto f4;
 	tr7: cs = 3; goto f5;
@@ -146,76 +149,88 @@ f4:
 #line 6 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
-f11:
+f14:
 #line 7 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
-f12:
+f11:
 #line 8 "packet_socket_fsm_actions.rl"
-	{}
+	{ handle_ack_packet(); }
+	goto _again;
+f12:
+#line 9 "packet_socket_fsm_actions.rl"
+	{ handle_data_packet(); }
 	goto _again;
 f13:
-#line 9 "packet_socket_fsm_actions.rl"
+#line 10 "packet_socket_fsm_actions.rl"
+	{ handle_nack_packet(); }
+	goto _again;
+f20:
+#line 11 "packet_socket_fsm_actions.rl"
+	{ idle_state_ = cs; }
+	goto _again;
+f5:
+#line 12 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f6:
+#line 15 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f8:
+#line 16 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f9:
+#line 17 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f10:
+#line 18 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f0:
+#line 19 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f2:
+#line 20 "packet_socket_fsm_actions.rl"
+	{ process_rx_packet(); }
+	goto _again;
+f3:
+#line 22 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
 f19:
-#line 10 "packet_socket_fsm_actions.rl"
+#line 23 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
-f5:
-#line 11 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f14:
-#line 12 "packet_socket_fsm_actions.rl"
+f7:
+#line 25 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
 f15:
 #line 13 "packet_socket_fsm_actions.rl"
 	{}
-	goto _again;
-f6:
-#line 14 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f8:
-#line 15 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f9:
-#line 16 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f10:
-#line 17 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f0:
-#line 18 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f2:
-#line 19 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f17:
-#line 20 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f3:
-#line 21 "packet_socket_fsm_actions.rl"
-	{}
-	goto _again;
-f18:
-#line 22 "packet_socket_fsm_actions.rl"
+#line 7 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
 f16:
-#line 23 "packet_socket_fsm_actions.rl"
+#line 14 "packet_socket_fsm_actions.rl"
+	{}
+#line 7 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
-f7:
+f18:
+#line 21 "packet_socket_fsm_actions.rl"
+	{}
+#line 7 "packet_socket_fsm_actions.rl"
+	{}
+	goto _again;
+f17:
 #line 24 "packet_socket_fsm_actions.rl"
+	{}
+#line 7 "packet_socket_fsm_actions.rl"
 	{}
 	goto _again;
 
@@ -228,5 +243,5 @@ _again:
 	_out: {}
 	}
 
-#line 56 "packet_socket_fsm_actions.rl"
+#line 57 "packet_socket_fsm_actions.rl"
 }

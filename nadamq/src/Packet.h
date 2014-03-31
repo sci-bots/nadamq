@@ -20,12 +20,10 @@ public:
   uint16_t payload_length_;
   uint16_t buffer_size_;
   uint8_t *payload_buffer_;
-  bool has_crc_;
   uint16_t crc_;
 
   Packet() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
-             buffer_size_(0), payload_buffer_(NULL), has_crc_(false),
-             crc_(0xFFFF) {}
+             buffer_size_(0), payload_buffer_(NULL), crc_(0xFFFF) {}
 
   template <typename ConvertibleType>
   void type(ConvertibleType type_byte) {
@@ -40,7 +38,6 @@ public:
      * __NB__ This method _does not_ deallocate the buffer. */
     type_ = packet_type::NONE;
     payload_length_ = 0;
-    has_crc_ = false;
     crc_ = 0xFFFF;
   }
 

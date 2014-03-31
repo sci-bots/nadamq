@@ -4,10 +4,11 @@ machine packet_socket_fsm;
 
 action cleanup {}
 action data_too_large {}
-action handle_ack {}
-action handle_data {}
-action handle_nack {}
-action initialize {}
+action finished_rx {}
+action handle_ack { handle_ack_packet(); }
+action handle_data { handle_data_packet(); }
+action handle_nack { handle_nack_packet(); }
+action initialize { idle_state_ = cs; }
 action parse_error {}
 action pop_packet {}
 action queue_ack {}
@@ -16,7 +17,7 @@ action queue_nack_data_too_large {}
 action queue_nack_parse_error {}
 action queue_nack_queue_full {}
 action read_stream {}
-action recv {}
+action recv { process_rx_packet(); }
 action requeue_packet {}
 action send {}
 action sent {}

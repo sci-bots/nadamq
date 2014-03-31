@@ -27,3 +27,4 @@ Program(['test_packet_parser.cpp', packet_actions],
         CCFLAGS=['-g', '-O0'])
 Program(['test_packet_socket.cpp', socket_fsm_src, packet_actions], CCFLAGS=['-g', '-O0'])
 Program(['test_circular_buffer.cpp'], CCFLAGS=['-g', '-O0'])
+Program(['test_deque.cpp'], CCFLAGS=['-g', '-O0'])

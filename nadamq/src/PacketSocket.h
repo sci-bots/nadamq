@@ -13,6 +13,8 @@
 using namespace std;
 #endif // ifndef AVR
 
+#include "PacketAllocator.h"
+
 
 class PacketSocket {
 protected:
@@ -41,7 +43,8 @@ public:
 };
 
 
-template <typename StreamPacketParser>
+template <typename StreamPacketParser,
+          typename Allocator=PacketAllocator<typename StreamPacketParser::packet_type> >
 class StreamPacketSocket : public PacketSocket {
 public:
   typedef PacketSocket base_type;
@@ -73,23 +76,42 @@ protected:
      *
      * We probably need to assign a packet allocator to the socket, which can
      * allocate and free packets. */
-    // rx_packet_.deallocate_buffer();
+    allocator_->free_packet_buffer(rx_packet_);
     event_queue_.push('q');
   }
-  virtual void handle_ack_packet() { event_queue_.push('Y'); }
-  virtual void handle_nack_packet() { event_queue_.push('N'); }
+
+  virtual void handle_ack_packet() {
+    allocator_->free_packet_buffer(rx_packet_);
+    event_queue_.push('Y');
+  }
+
+  virtual void handle_nack_packet() {
+    allocator_->free_packet_buffer(rx_packet_);
+    event_queue_.push('N');
+  }
 public:
   StreamPacketParser &parser_;
+  Allocator *allocator_;
   CircularBuffer<packet_type> rx_queue_;
   CircularBuffer<packet_type> tx_queue_;
   CircularBuffer<uint8_t> event_queue_;
+  packet_type parser_packet_;
+  /* Complete packet that is currently being processed. */
   packet_type rx_packet_;
+  /* Complete packet that is currently being processed. */
   packet_type tx_packet_;
 
-  StreamPacketSocket(StreamPacketParser &parser, size_t event_queue_length,
-                     size_t rx_queue_length, size_t tx_queue_length)
-    : PacketSocket(), parser_(parser), event_queue_(event_queue_length),
-      rx_queue_(rx_queue_length), tx_queue_(tx_queue_length) {
+  StreamPacketSocket(StreamPacketParser &parser, Allocator *allocator,
+                     size_t event_queue_length, size_t rx_queue_length,
+                     size_t tx_queue_length)
+    : PacketSocket(), parser_(parser), allocator_(allocator),
+       rx_queue_(rx_queue_length), tx_queue_(tx_queue_length),
+       event_queue_(event_queue_length),
+       parser_packet_(allocator->create_packet()) {
+    /* Assign the packet instance we've allocated for receiving to the packet
+     * parser.  The packet parser will parse the incoming byte stream and fill
+     * the receiving packet accordingly. */
+    parser_.reset(&parser_packet_);
     /* Push initialization event. */
     push_event('i');
   }
@@ -165,12 +187,14 @@ public:
   }
 
   virtual void update_rx_queue() {
-    /* The stream parser has a full packet ready.  Push a copy of the full
-     * packet onto the receiving queue. */
-    push_rx_packet(parser_.packet());
+    /* The stream parser has a full packet ready.  Push the full packet onto
+     * the receiving queue. */
+    push_rx_packet(parser_packet_);
 
-    /* Reset the stream parser to prepare for parsing the next packet. */
-    parser_.reset();
+    /* Allocate a new packet for the stream parser to use and assign it to the
+     * stream parser to prepare for parsing the next packet. */
+    parser_packet_ = allocator_->create_packet();
+    parser_.reset(&parser_packet_);
   }
 };
 

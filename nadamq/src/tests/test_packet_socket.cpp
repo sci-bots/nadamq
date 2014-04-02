@@ -37,21 +37,20 @@ int main(int argc, const char *argv[]) {
   std::cout << std::setw(20) << "events: " << argv[1] << std::endl;
 
   typedef FixedPacket packet_type;
-  PacketAllocator<packet_type> packet_allocator;
-  packet_type packet = packet_allocator.create_packet();
-
-  PacketParser<packet_type> parser;
-  parser.reset(&packet);
-
   typedef StreamWrapper<std::ifstream, 128> Stream;
+  typedef PacketParser<packet_type> packet_parser_type;
+  typedef StreamPacketParser<packet_parser_type, Stream> stream_parser_type;
+  typedef StreamPacketSocket<stream_parser_type> socket_type;
+  typedef PacketAllocator<packet_type> allocator_type;
+
+  allocator_type packet_allocator;
+  packet_parser_type parser;
 
   std::ifstream input(argv[1], std::ifstream::binary);
   if (input) {
     Stream wrapper(input);
-    StreamPacketParser<PacketParser<packet_type>, Stream>
-      stream_parser(parser, wrapper);
-    StreamPacketSocket<StreamPacketParser<PacketParser<packet_type>, Stream> >
-      socket(stream_parser, 128, 10, 10);
+    stream_parser_type stream_parser(parser, wrapper);
+    socket_type socket(stream_parser, &packet_allocator, 128, 10, 10);
     socket.reset();
 
     std::cout << std::endl << "## State transitions ##" << std::endl;

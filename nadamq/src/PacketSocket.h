@@ -68,7 +68,12 @@ protected:
                              rx_packet_.payload_length_) << "'" << std::endl;
     /* Need to deallocate buffer here until we transfer ownership to somewhere
      * else, e.g., packet-stream. */
-    rx_packet_.deallocate_buffer();
+    /* TODO
+     * ====
+     *
+     * We probably need to assign a packet allocator to the socket, which can
+     * allocate and free packets. */
+    // rx_packet_.deallocate_buffer();
     event_queue_.push('q');
   }
   virtual void handle_ack_packet() { event_queue_.push('Y'); }
@@ -162,7 +167,7 @@ public:
   virtual void update_rx_queue() {
     /* The stream parser has a full packet ready.  Push a copy of the full
      * packet onto the receiving queue. */
-    push_rx_packet(parser_.packet().clone());
+    push_rx_packet(parser_.packet());
 
     /* Reset the stream parser to prepare for parsing the next packet. */
     parser_.reset();

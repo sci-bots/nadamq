@@ -10,9 +10,10 @@ using namespace std;
 #endif
 
 #include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-
-class Packet {
+class PacketBase {
 public:
   struct packet_type { enum EnumType {NONE, ACK='a', NACK='n', DATA='d'}; };
 
@@ -24,8 +25,8 @@ public:
   uint8_t *payload_buffer_;
   uint16_t crc_;
 
-  Packet() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
-             buffer_size_(0), payload_buffer_(NULL), crc_(0xFFFF) {}
+  PacketBase() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
+                 buffer_size_(0), payload_buffer_(NULL), crc_(0xFFFF) {}
 
   template <typename ConvertibleType>
   void type(ConvertibleType type_byte) {
@@ -42,6 +43,49 @@ public:
     payload_length_ = 0;
     crc_ = 0xFFFF;
   }
+};
+
+
+class FixedPacket : public PacketBase {
+  /* # `FixedPacket` #
+   *
+   * This type of packet assumes no ownership over the payload buffer.  All
+   * management of the buffer must be done using one of the `reset_buffer`
+   * methods.
+   *
+   * This packet type is useful, e.g., with the `PacketAllocator`, which
+   * creates packets, allocating a new payload buffer for each packet. */
+public:
+  void reset_buffer(uint16_t buffer_size, uint8_t *buffer) {
+    /* Assign a new payload buffer _(may be empty)_. */
+    buffer_size_ = buffer_size;
+    payload_buffer_ = buffer;
+  }
+
+  void reset_buffer() {
+    /* Reset the buffer assignment such that the packet has no payload-buffer.
+     * */
+    reset_buffer(0, NULL);
+  }
+};
+
+
+class Packet : public PacketBase {
+public:
+  bool buffer_owner_;
+
+  Packet() : PacketBase(), buffer_owner_(false) {}
+
+  void assign_buffer(uint16_t buffer_size, uint8_t *buffer) {
+    if (buffer_owner_) {
+      /* We are the owner of the current buffer, so we must deallocate it
+       * before assigning the new buffer. */
+      deallocate_buffer();
+    }
+    buffer_size_ = buffer_size;
+    buffer_owner_ = false;
+    payload_buffer_ = buffer;
+  }
 
   void reallocate_buffer(uint16_t buffer_size, bool shrink=false) {
     /* Reallocate memory for payload buffer based on specified target size.
@@ -54,11 +98,15 @@ public:
      * between invocations. */
     if ((buffer_size_ < buffer_size) || (shrink && (buffer_size_ >
                                                     buffer_size))) {
-      deallocate_buffer();
+      if (buffer_owner_) {
+        deallocate_buffer();
+      }
       payload_buffer_ = static_cast<uint8_t *>(calloc(buffer_size,
                                                       sizeof(uint8_t)));
       if (payload_buffer_ != NULL) {
         buffer_size_ = buffer_size;
+        /* Take note that we are now the owner of the buffer. */
+        buffer_owner_ = true;
       }
     }
   }
@@ -70,12 +118,19 @@ public:
     }
   }
 
-  //~Packet() { deallocate_buffer(); }
+#if 0
+  ~Packet() {
+    if (buffer_owner_) {
+      deallocate_buffer();
+    }
+  }
+#endif
 
   Packet clone() const {
     Packet packet = *this;
     packet.payload_buffer_ = NULL;
     packet.buffer_size_ = 0;
+    /* `reallocate_buffer` sets the new packet as the owner of its buffer. */
     packet.reallocate_buffer(this->buffer_size_);
     strncpy((char *)packet.payload_buffer_, (char *)this->payload_buffer_,
             this->payload_length_);

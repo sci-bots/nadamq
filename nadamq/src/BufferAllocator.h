@@ -9,7 +9,7 @@
 
 
 template <size_t BufferSize, size_t Count>
-class FixedSizeBufferAllocator {
+class FixedSizeBufferPool {
   /* # `FixedSizeBufferPool` #
    *
    * Provide pooled allocation of fixed size buffers.  This is particularly
@@ -44,7 +44,7 @@ public:
    * [ buffer ID ][ buffer contents ]
    * |<---- padded_buffer_size ---->|
    */
-  FixedSizeBufferAllocator() : next_free(0), free_count(Count) {
+  FixedSizeBufferPool() : next_free(0), free_count(Count) {
     for (int i = 0; i < padded_buffer_size * Count; i++) {
       super_buffer_[i] = 0;
     }
@@ -55,8 +55,11 @@ public:
     }
   }
 
+  size_t buffer_size() const { return BufferSize; }
+  size_t buffer_count() const { return Count; }
+
   size_t available() const {
-    return (free_count != 0);
+    return free_count;
   }
 
   uint8_t *buffer_by_id(uint32_t id) const {

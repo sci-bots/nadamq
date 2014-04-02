@@ -2,7 +2,7 @@
 
 
 int main(int argc, const char *argv[]) {
-  FixedSizeBufferAllocator<8, 2> allocator;
+  FixedSizeBufferPool<8, 2> allocator;
   std::cout << std::boolalpha;
   uint8_t *buffer0 = allocator.alloc();
   uint8_t *buffer1 = allocator.alloc();

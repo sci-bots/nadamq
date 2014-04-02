@@ -47,6 +47,13 @@ action length_received {
   std::cout << "[length_received]: " << static_cast<int>(*p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   payload_bytes_expected_ = *p;
+  if (payload_bytes_expected_ > packet_->buffer_size_) {
+#ifndef AVR
+      std::cerr << "[ERROR]: expected length is too long for buffer.  "
+                   "Buffer length is " << packet_->buffer_size_ << std::endl;
+#endif  // #ifndef AVR
+    parse_error_ = true;
+  }
 }
 
 action payload_start {
@@ -55,7 +62,7 @@ action payload_start {
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   /* Resize the payload buffer to fit the expected payload size. */
-  packet_->reallocate_buffer(payload_bytes_expected_);
+  // packet_->reallocate_buffer(payload_bytes_expected_);
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
   crc_ = crc_init();
@@ -161,7 +168,8 @@ include "packet.rl";
 
 %% write data;
 
-void PacketParser::reset() {
+template <typename Packet>
+inline void PacketParser<Packet>::reset() {
   /*
    * Attempt to parse a packet from a buffer with length `buffer_len`.
    *
@@ -191,7 +199,8 @@ void PacketParser::reset() {
 }
 
 
-void PacketParser::parse_byte(uint8_t *byte) {
+template <typename Packet>
+inline void PacketParser<Packet>::parse_byte(uint8_t *byte) {
   uint8_t dummy_byte;
 
   if (byte == NULL) {
@@ -224,3 +233,7 @@ uint16_t finalize_crc(uint16_t crc) {
 #endif
     return crc;
 }
+
+
+template void PacketParser<FixedPacket>::reset();
+template void PacketParser<FixedPacket>::parse_byte(uint8_t *);

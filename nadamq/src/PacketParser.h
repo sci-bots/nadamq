@@ -22,11 +22,11 @@ inline void crc_finalize(...) {}
 
 #endif // ifndef AVR
 
-#include "Packet.h"
-
 
 uint16_t update_crc(uint16_t crc, uint8_t data);
 uint16_t finalize_crc(uint16_t crc);
+
+#include "Packet.h"
 
 
 class Parser {
@@ -51,6 +51,7 @@ public:
 };
 
 
+template <typename Packet>
 class PacketParser : public Parser {
 public:
   typedef Parser base_type;

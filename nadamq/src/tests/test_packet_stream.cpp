@@ -64,6 +64,17 @@ class PacketStreamHandler : public PacketHandlerBase<Parser, Stream> {
 };
 
 
+template <typename PacketStream>
+void dump_byte_counts(PacketStream &packet_stream) {
+  std::cout << std::endl << "# Packet stream byte counts #" << std::endl
+            << std::endl;
+  std::cout << std::setw(24) << "packet count: "
+            << packet_stream.packet_count() << std::endl;
+  std::cout << std::setw(24) << "total bytes: "
+            << packet_stream.available() << std::endl;
+}
+
+
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
     std::cerr << "usage: " << argv[0] << " <packet file>" << std::endl;
@@ -92,8 +103,10 @@ int main(int argc, const char *argv[]) {
                         PacketStream<PacketAllocator<packet_type> > >
       stream_handler(parser, wrapper, packet_stream);
     stream_handler.parse_available();
+    dump_byte_counts(packet_stream);
 
-    std::cout << "# Read stream of payload bytes from packet stream #"
+    std::cout << std::endl
+              << "# Read stream of payload bytes from packet stream #"
               << std::endl << std::endl;
     std::cout << "    ";
     while (packet_stream.available() > 0) {
@@ -104,13 +117,17 @@ int main(int argc, const char *argv[]) {
     }
     std::cout << std::endl << std::endl << "## End of stream ##" << std::endl
               << std::endl;
+    dump_byte_counts(packet_stream);
 
     /*  - Rewind input file to try again. */
     input.clear();
     input.seekg(0);
 
     stream_handler.parse_available();
-    std::cout << "# Read stream of payload bytes from packet stream #"
+    dump_byte_counts(packet_stream);
+
+    std::cout << std::endl
+              << "# Read stream of payload bytes from packet stream #"
               << std::endl << std::endl;
     std::cout << "    ";
     while (packet_stream.available() > 0) {
@@ -119,8 +136,8 @@ int main(int argc, const char *argv[]) {
         std::cout << static_cast<char>(value);
       }
     }
-    std::cout << std::endl << std::endl << "## End of stream ##" << std::endl
-              << std::endl;
+    std::cout << std::endl << std::endl << "## End of stream ##" << std::endl;
+    dump_byte_counts(packet_stream);
   }
   return 0;
 }

@@ -46,7 +46,7 @@ class PacketStreamHandler : public PacketHandlerBase<Parser, Stream> {
               packet.payload_length_,
               std::ostream_iterator<uint8_t>(std::cout, ""));
     std::cout << "'" << std::endl;
-    packet_type queue_packet = packet_stream_.create_packet();
+    packet_type queue_packet = packet_stream_.allocator()->create_packet();
     uint8_t *buffer = queue_packet.payload_buffer_;
     queue_packet = packet;
     queue_packet.payload_buffer_ = buffer;
@@ -55,7 +55,7 @@ class PacketStreamHandler : public PacketHandlerBase<Parser, Stream> {
     std::cout << std::endl << "## Queue packet into packet stream ##"
               << std::endl << std::endl;
     packet_stream_.push(queue_packet);
-    std::cout << " - Complete" << std::endl << std::endl;
+    std::cout << " - Complete" << std::endl;
   }
 
   virtual void handle_error(packet_type &packet) {

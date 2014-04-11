@@ -101,10 +101,32 @@ protected:
     return (packet_queue_.tail().payload_buffer_ +
             packet_queue_.tail().payload_length_) - data_;
   }
+
+  void prepare_active_packet() {
+    /* Continue popping the active packet _(i.e., the *tail*)_ from the queue
+     * until we either:
+     *
+     *  1. Find a packet with a non-zero payload length.
+     *  2. Empty the packet queue. */
+    while (packet_queue_.size() > 0 && packet_available() == 0) {
+      allocator_->free_packet_buffer(packet_queue_.tail());
+      packet_queue_.pop_tail();
+      data_ = packet_queue_.tail().payload_buffer_;
+    }
+  }
+
 public:
   PacketStream(PacketAllocator *packet_allocator, size_t max_queue_length=1024)
     : allocator_(packet_allocator), packet_queue_(max_queue_length),
       data_(NULL), bytes_available_(0) {}
+
+  PacketAllocator *allocator() const {
+    return allocator_;
+  }
+
+  size_t packet_count() const {
+    return packet_queue_.size();
+  }
 
   packet_type create_packet() {
     return allocator_->create_packet();
@@ -125,27 +147,24 @@ public:
   }
 
   int read() {
-    if (packet_available() == 0) {
-      /* There are no bytes left in the active packet, but there may be more
-       * bytes left in the remaining packets.  We need to pop the active packet
-       * _(i.e., the *tail*)_ from the queue and continue until we either:
-       *
-       *  1. Find a packet with a non-zero payload length.
-       *  2. Empty the packet queue. */
-      while (packet_queue_.size() > 0 && !packet_available()) {
-        allocator_->free_packet_buffer(packet_queue_.tail());
-        packet_queue_.pop_tail();
-        data_ = packet_queue_.tail().payload_buffer_;
-      }
-    }
-    if (packet_available() > 0) {
-      int value = *data_;
-      data_++;
-      bytes_available_--;
-      return value;
-    }
     /* There are no bytes available. */
-    return -1;
+    if (available() <= 0) {
+      return -1;
+    }
+
+    prepare_active_packet();
+    int value = *data_;
+    data_++;
+    bytes_available_--;
+
+    if (packet_available() == 0) {
+      /* Deallocate packet since we must have just read the last payload byte
+       * and activate the next packet _(if available)_ for the next call to
+       * `read()`. */
+      prepare_active_packet();
+    }
+
+    return value;
   }
 };
 

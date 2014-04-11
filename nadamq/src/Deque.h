@@ -26,9 +26,9 @@ public:
   void push(T item);
   T pop_tail();
   T pop_head();
-  T head() const { return head_->value; }
-  T tail() const { return tail_->value; }
-  T empty() const { return (item_count_ == 0); }
+  T &head() const { return head_->value; }
+  T &tail() const { return tail_->value; }
+  bool empty() const { return (item_count_ == 0); }
   size_t size() const { return item_count_; }
 };
 
@@ -112,7 +112,7 @@ public:
       return false;
     }
   }
-  T full() const { return (item_count_ == max_size_); }
+  bool full() const { return (item_count_ == max_size_); }
 };
 
 

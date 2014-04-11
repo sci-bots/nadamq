@@ -23,6 +23,7 @@ class PacketAllocator {
 protected:
   Allocator *buffer_allocator_;
 public:
+  typedef Packet packet_type;
   typedef Allocator allocator_type;
 
   /* Buffer format

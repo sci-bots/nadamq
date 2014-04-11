@@ -32,3 +32,4 @@ env.Program(['tests/test_packet_socket.cpp', socket_fsm_src, packet_actions],
 env.Program(['tests/test_circular_buffer.cpp'], CCFLAGS=['-g', '-O0'])
 env.Program(['tests/test_deque.cpp'], CCFLAGS=['-g', '-O0'])
 env.Program(['tests/test_buffer_allocator.cpp'], CCFLAGS=['-g', '-O0'])
+env.Program(['tests/test_packet_stream.cpp', packet_actions], CCFLAGS=['-g', '-O0'])

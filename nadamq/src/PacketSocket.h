@@ -47,6 +47,7 @@ public:
   virtual void handle_packet() = 0;
   virtual void resend_packet() = 0;
   virtual void pop_packet() = 0;
+  virtual void queue_ack() = 0;
 };
 
 
@@ -59,7 +60,26 @@ public:
 protected:
   bool push_event(uint8_t event) { return event_queue_.push(event); }
 
-  virtual void process_tx_packet() {}
+  virtual void process_tx_packet() {
+    if (tx_queue_.size() == 0) {
+      /* No packet to process. */
+      event_queue_.push('N');
+      return;
+    }
+    tx_packet_ = tx_queue_.pop_tail();
+    std::cout << std::endl << "# TX packet info #" << std::endl
+              << std::endl;
+    std::cout << std::setw(23) << "uuid: " << tx_packet_.iuid_ << std::endl;
+    std::cout << std::setw(23) << "type: "
+              << static_cast<char>(tx_packet_.type()) << std::endl;
+    if (tx_packet_.type() == packet_type::packet_type::DATA) {
+      std::cout << std::setw(23) << "data payload: " << "'"
+                << std::string((char *)tx_packet_.payload_buffer_,
+                               tx_packet_.payload_length_) << "'" << std::endl;
+    }
+    allocator_->free_packet_buffer(tx_packet_);
+    event_queue_.push('s');
+  }
 
   virtual void process_rx_packet() {
     if (rx_queue_.size() == 0) {
@@ -294,6 +314,18 @@ public:
      * the successfully sent packet from our transmission queue. */
 
     //allocator_->free_packet_buffer(tx_packet_);
+  }
+
+  virtual void queue_ack() {
+    /* Create an `ACK` packet to signal the successful receipt of the most
+     * recently received data packet.  Note that we construct the `ACK` packet
+     * as a copy of the received packet to inherit the respective `iuid`, but
+     * we clear the buffer, since the `ACK` packet does not carry any payload.
+     * */
+    packet_type ack = rx_packet_;
+    ack.type(packet_type::packet_type::ACK);
+    ack.clear_buffer();
+    tx_queue_.push(ack);
   }
 };
 

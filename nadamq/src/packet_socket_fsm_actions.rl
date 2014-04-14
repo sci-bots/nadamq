@@ -13,7 +13,7 @@ action initialize { idle_state_ = cs; }
 action no_free_packets { handle_no_free_packets(); }
 action parse_error {}
 action pop_packet { pop_packet(); }
-action queue_ack {}
+action queue_ack { queue_ack(); }
 action queue_full { handle_queue_full(); }
 action queue_nack_data_too_large {}
 action queue_nack_parse_error {}
@@ -21,7 +21,7 @@ action queue_nack_queue_full { queue_nack_queue_full(); }
 action read_stream { read_stream(); }
 action recv { process_rx_packet(); }
 action resend_packet { resend_packet(); }
-action send {}
+action send { process_tx_packet(); }
 action sent {}
 action split_and_queue_packet {}
 action update_rx_queue { update_rx_queue(); }

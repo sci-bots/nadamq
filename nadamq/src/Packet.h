@@ -11,12 +11,11 @@ using namespace std;
 
 
 class Packet {
-protected:
-  uint8_t command_;
-
 public:
-  struct packet_type { enum EnumType {NONE, REQUEST, RESPONSE}; };
+  struct packet_type { enum EnumType {NONE, ACK=5, NACK=6, DATA=7}; };
 
+  /* Interface unique identifier. */
+  uint16_t iuid_;
   packet_type::EnumType type_;
   uint16_t payload_length_;
   uint16_t buffer_size_;
@@ -24,46 +23,22 @@ public:
   bool has_crc_;
   uint16_t crc_;
 
-  Packet() : command_(0), type_(packet_type::NONE), payload_length_(0),
+  Packet() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
              buffer_size_(0), payload_buffer_(NULL), has_crc_(false),
              crc_(0xFFFF) {}
 
-  void command(uint8_t command_with_type_msb) {
-    /* # `command` #
-     *
-     * Set the command byte and the type _(i.e., request or response)_ of the
-     * packet.
-     *
-     * ## Type inference from _Most-Significant-Bit (MSB)_ ##
-     *
-     * The MSB of command specifies whether this packet is a _request_ or a
-     * _response_.  Specifically, if the MSB is `1`, the packet is a _request_
-     * and if the MSB is `0`, the packet is a _response_.
-     *
-     * ## Stripped command ##
-     *
-     * When setting the `command_` byte of the packet, we strip the MSB
-     * type-specifier.  In other words, response and request packets for the
-     * same command will have the same `command_` byte value, but will differ
-     * in the value of the `type_` attribute.
-     * */
-    if (0x80 & command_with_type_msb) {
-      type_ = packet_type::REQUEST;
-    } else {
-      type_ = packet_type::RESPONSE;
-    }
-    /*  - Strip MSB type-specifier. */
-    command_ = 0x7F & command_with_type_msb;
+  template <typename ConvertibleType>
+  void type(ConvertibleType type_byte) {
+    type_ = (packet_type::EnumType)type_byte;
   }
 
-  uint8_t command() const { return command_; }
+  packet_type::EnumType type() const { return type_; }
 
   void reset() {
     /* Reset state of packet.
      *
      * __NB__ This method _does not_ deallocate the buffer. */
     type_ = packet_type::NONE;
-    command_ = 0;
     payload_length_ = 0;
     has_crc_ = false;
     crc_ = 0xFFFF;

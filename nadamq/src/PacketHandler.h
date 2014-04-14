@@ -42,12 +42,7 @@ class PacketHandlerBase {
         handle_error(*(parser_.packet_));
         parser_.reset();
       } else
-#ifdef CRC_VERIFY
-      if (parser_.message_completed_ &&
-          (!parser_.packet_->has_crc_ || parser_.verified())) {
-#else
       if (parser_.message_completed_) {
-#endif  // #ifdef CRC_VERIFY / #else
         /* # Process packet #
          *
          * Do something with successfully parsed packet.
@@ -84,16 +79,6 @@ class VerbosePacketHandler : public PacketHandlerBase<Parser, IStream> {
     ostream_.println("");
     ostream_.print("type: ");
     ostream_.println(packet.type_);
-    ostream_.print("command: ");
-    ostream_.println(static_cast<int>(0x0FF & packet.command()));
-    if (packet.has_crc_) {
-      ostream_.print("CRC ok: ");
-      if (parser_.verified()) {
-        ostream_.println("T");
-      } else {
-        ostream_.println("F");
-      }
-    }
     ostream_.print("payload length: ");
     ostream_.println(packet.payload_length_);
     ostream_.print("payload: '");
@@ -123,12 +108,10 @@ class VerbosePacketHandler : public PacketHandlerBase<Parser, Stream> {
 
   virtual void handle_packet(packet_type &packet) {
     std::cout << "# Packet parsed successfully #" << std::endl;
-    std::cout << std::setw(24) << "command: " << std::hex
-              << static_cast<int>(0x00FF & packet.command()) << std::endl;
-    if (packet.has_crc_) {
-      std::cout << std::setw(24) << "CRC ok: " << parser_.verified()
-                << std::endl;
-    }
+    std::cout << std::setw(24) << "iuid: " << std::dec
+              << static_cast<int>(0x00FFFF & packet.iuid_) << std::endl;
+    std::cout << std::setw(24) << "type: " << std::hex
+              << static_cast<int>(0x00FF & packet.type()) << std::endl;
     std::cout << std::setw(24) << "payload length: "
               << packet.payload_length_ << std::endl;
     std::cout << std::setw(24) << "payload: " << "'";

@@ -1,8 +1,4 @@
-# ragel-generated file
-/packet_actions.c
-/packet_actions.dot
-/packet_actions.pdf
-
-# Cython-generated/-compiled file(s)
-/PacketParser.cpp
-/PacketParser.so
+*.o
+*.pyc
+RELEASE-VERSION
+MANIFEST

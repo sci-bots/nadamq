@@ -1,7 +1,7 @@
-packet = startflag command payloadlength payload [crc] endflag
-startflag = %x7E
-command = %x80-FF
-payloadlength = %x00-7F / (%x80-FF OCTET)
+packet = startflag iuid type length payload crc
+startflag = 3%x7C
+iuid = 3OCTET
+type = OCTET
+length = OCTET
 payload = *OCTET
 crc = 2OCTET
-endflag = %x7E

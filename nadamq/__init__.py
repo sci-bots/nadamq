@@ -2,12 +2,12 @@ import os
 
 
 def get_includes():
-    import packet_parser
+    import nadamq
     r"""
-    Return the directory that contains the `packet_parser` Cython *.hpp and
+    Return the directory that contains the `nadamq` Cython *.hpp and
     *.pxd header files.
 
-    Extension modules that need to compile against `packet_parser` should use
+    Extension modules that need to compile against `nadamq` should use
     this function to locate the appropriate include directory.
 
     Notes
@@ -15,23 +15,23 @@ def get_includes():
     When using ``distutils``, for example in ``setup.py``.
     ::
 
-        import packet_parser
+        import nadamq
         ...
         Extension('extension_name', ...
-                  include_dirs=[...] + packet_parser.get_includes())
+                  include_dirs=[...] + nadamq.get_includes())
         ...
 
     """
-    return [os.path.join(os.path.dirname(packet_parser.__file__), 'src')]
+    return [os.path.join(os.path.dirname(nadamq.__file__), 'src')]
 
 
 def get_sources():
-    import packet_parser
+    import nadamq
     r"""
     Return a list of the additional *.cpp files that must be compiled along
-    with the `packet_parser` Cython extension definitions.
+    with the `nadamq` Cython extension definitions.
 
-    Extension modules that need to compile against `packet_parser` should use
+    Extension modules that need to compile against `nadamq` should use
     this function to locate the appropriate source files.
 
     Notes
@@ -39,10 +39,10 @@ def get_sources():
     When using ``distutils``, for example in ``setup.py``.
     ::
 
-        import packet_parser
+        import nadamq
         ...
         Extension('extension_name', ...
-                  sources + packet_parser.get_sources())
+                  sources + nadamq.get_sources())
         ...
 
     """

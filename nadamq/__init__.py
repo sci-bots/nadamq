@@ -47,5 +47,5 @@ def get_sources():
 
     """
     source_dir = get_includes()[0]
-    return [os.path.join(source_dir, f) for f in ('crc-16.c',
+    return [os.path.join(source_dir, f) for f in ('crc-16.c', 'crc_common.cpp',
                                                   'packet_actions.cpp')]

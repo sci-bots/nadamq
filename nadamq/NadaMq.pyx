@@ -1,7 +1,9 @@
 #cython: embedsignature=True
 cimport cython
+from cython.operator cimport dereference as deref
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t
+from libc.string cimport strcpy
 
 import re
 
@@ -60,7 +62,7 @@ cdef extern from "PacketParser.h":
         uchar type()
         void type(uchar command_with_type_msb)
 
-    cdef cppclass PacketParser:
+    cdef cppclass PacketParser "PacketParser<Packet>":
         int payload_bytes_received_
         int payload_bytes_expected_
         bint message_completed_
@@ -79,11 +81,37 @@ cdef extern from "crc-16.h":
     crc_t c_crc_update_byte "crc_update_byte" (crc_t crc, uchar data)
 
 
+cdef extern from "<sstream>" namespace "std":
+    cdef cppclass stringstream:
+        stringstream()
+        string str_ "str" ()
+
+
+cdef extern from "PacketWriter.h":
+    void write_packet(stringstream output, Packet packet)
+
+
 cdef class cPacket:
     cdef Packet *thisptr
 
     def __cinit__(self):
         self.thisptr = new Packet()
+
+    def set_buffer(self, unsigned char [:] data, overwrite=False):
+        if self.thisptr.payload_buffer_ != NULL and not overwrite:
+            raise RuntimeError('Packet already has a payload buffer '
+                               'allocated.  Must use `overwrite=True` to set '
+                               'buffer anyway.')
+        self.thisptr.payload_buffer_ = &data[0]
+        self.thisptr.buffer_size_ = len(data)
+        self.thisptr.payload_length_ = 0
+
+    def set_data(self, string data):
+        if data.size() > self.thisptr.buffer_size_:
+            raise ValueError('Data length is too large for buffer, %s > %s' %
+                             data.size(), self.thisptr.buffer_size_)
+        strcpy(<char *>self.thisptr.payload_buffer_, data.c_str())
+        self.thisptr.payload_length_ = data.size()
 
     def data(self):
         return self.thisptr.data()
@@ -93,6 +121,11 @@ cdef class cPacket:
 
     def data_ptr(self):
         return <size_t>self.thisptr.payload_buffer_
+
+    def tostring(self):
+        cdef stringstream output
+        write_packet(output, deref(self.thisptr))
+        return output.str_()
 
     property crc:
         def __get__(self):
@@ -111,31 +144,31 @@ cdef class cPacket:
             self.thisptr.iuid_ = value
 
 
-cdef class cPacketParser:
-    cdef PacketParser *thisptr
+#cdef class cPacketParser:
+    #cdef PacketParser *thisptr
 
-    def __cinit__(self):
-        self.thisptr = new PacketParser()
+    #def __cinit__(self):
+        #self.thisptr = new PacketParser()
 
-    def __dealloc__(self):
-        del self.thisptr
+    #def __dealloc__(self):
+        #del self.thisptr
 
-    def parse(self, uchar [:] packet_buffer):
-        packet = cPacket()
-        self.thisptr.reset(packet.thisptr)
-        cdef int i
-        for i in xrange(len(packet_buffer)):
-            self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
-            error = self.thisptr.parse_error_
-            if error:
-                self.thisptr.reset(packet.thisptr)
-                raise RuntimeError, ('Error parsing packet: %s' %
-                                     np.asarray(packet_buffer).tostring())
-        return packet
+    #def parse(self, uchar [:] packet_buffer):
+        #packet = cPacket()
+        #self.thisptr.reset(packet.thisptr)
+        #cdef int i
+        #for i in xrange(len(packet_buffer)):
+            #self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
+            #error = self.thisptr.parse_error_
+            #if error:
+                #self.thisptr.reset(packet.thisptr)
+                #raise RuntimeError, ('Error parsing packet: %s' %
+                                     #np.asarray(packet_buffer).tostring())
+        #return packet
 
-    property crc:
-        def __get__(self):
-            return self.thisptr.crc_
+    #property crc:
+        #def __get__(self):
+            #return self.thisptr.crc_
 
 
 def crc_init():

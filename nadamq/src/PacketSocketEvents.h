@@ -19,8 +19,8 @@ inline std::string event_label(uint8_t event) {
     case 's': return "packet_sent";
     case 'e': return "parse_error";
     case 'q': return "queued_ok";
-    case 'F': return "queue_fail";
     case 'f': return "queue_full";
+    case 'F': return "no_free_packets";
     case 'I': return "rx_packet_queued";
     case 'A': return "rx_stream_available";
     case 'O': return "tx_packet_queued";

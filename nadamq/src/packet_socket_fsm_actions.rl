@@ -8,17 +8,19 @@ action finished_rx {}
 action handle_ack { handle_ack_packet(); }
 action handle_data { handle_data_packet(); }
 action handle_nack { handle_nack_packet(); }
+action handle_packet { handle_packet(); }
 action initialize { idle_state_ = cs; }
+action no_free_packets { handle_no_free_packets(); }
 action parse_error {}
-action pop_packet {}
+action pop_packet { pop_packet(); }
 action queue_ack {}
-action queue_full {}
+action queue_full { handle_queue_full(); }
 action queue_nack_data_too_large {}
 action queue_nack_parse_error {}
-action queue_nack_queue_full {}
+action queue_nack_queue_full { queue_nack_queue_full(); }
 action read_stream { read_stream(); }
 action recv { process_rx_packet(); }
-action requeue_packet {}
+action resend_packet { resend_packet(); }
 action send {}
 action sent {}
 action split_and_queue_packet {}

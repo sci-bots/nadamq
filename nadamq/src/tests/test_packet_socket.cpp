@@ -40,8 +40,8 @@ int main(int argc, const char *argv[]) {
   typedef StreamWrapper<std::ifstream, 128> Stream;
   typedef PacketParser<packet_type> packet_parser_type;
   typedef StreamPacketParser<packet_parser_type, Stream> stream_parser_type;
-  typedef StreamPacketSocket<stream_parser_type> socket_type;
-  typedef PacketAllocator<packet_type> allocator_type;
+  typedef PacketAllocator<packet_type, FixedSizeBufferPool<128, 1> > allocator_type;
+  typedef StreamPacketSocket<stream_parser_type, allocator_type> socket_type;
 
   allocator_type packet_allocator;
   packet_parser_type parser;

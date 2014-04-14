@@ -35,6 +35,19 @@ public:
 
   packet_type::EnumType type() const { return type_; }
 
+  void clear_buffer() {
+    /* This method is intended for instances created using the copy
+     * constructor, where we would like to copy all fields from the source
+     * packet _except for the buffer_.
+     *
+     * __NB__ This method does _not_ deallocate the buffer, so may lead to
+     * memory leaks if used improperly.  Only use this method if you really
+     * understand what it does! */
+    payload_buffer_ = NULL;
+    payload_length_ = 0;
+    buffer_size_ = 0;
+  }
+
   void reset() {
     /* Reset state of packet.
      *

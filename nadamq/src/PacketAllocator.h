@@ -50,6 +50,9 @@ public:
     }
     /* Assign buffer to packet. */
     packet.reset_buffer(buffer_size, buffer);
+    std::cout << "# `PacketAllocator::create_packet()` (" << available()
+              << "/" << buffer_allocator_->buffer_count() << ") now available #"
+              << std::endl << std::endl;
     return packet;
   }
 
@@ -60,6 +63,9 @@ public:
     if (packet.payload_buffer_ != NULL) {
       buffer_allocator_->free(packet.payload_buffer_);
     }
+    std::cout << "# `PacketAllocator::free_packet_buffer()` (" << available()
+              << "/" << buffer_allocator_->buffer_count() << ") now available #" << std::endl
+              << std::endl;
   }
 
   size_t available() const {

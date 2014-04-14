@@ -67,3 +67,5 @@ if __name__ == '__main__':
     finally:
         if args.output_path is not None:
             output.close()
+        else:
+            print output.getvalue()

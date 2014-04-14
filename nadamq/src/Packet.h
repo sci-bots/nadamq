@@ -7,11 +7,13 @@
 #include <stdexcept>
 #include <string>
 using namespace std;
-#endif
+#endif // ifndef AVR
 
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "crc_common.h"
+
 
 class PacketBase {
 public:
@@ -55,6 +57,16 @@ public:
     type_ = packet_type::NONE;
     payload_length_ = 0;
     crc_ = 0xFFFF;
+  }
+
+  uint16_t compute_crc() {
+    /* Compute the CRC of the packet payload. */
+    crc_ = crc_init();
+    for (int i = 0; i < payload_length_; i++) {
+      crc_ = update_crc(crc_, payload_buffer_[i]);
+    }
+    crc_ = finalize_crc(crc_);
+    return crc_;
   }
 };
 

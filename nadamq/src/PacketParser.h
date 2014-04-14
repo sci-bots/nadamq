@@ -3,28 +3,14 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "crc_common.h"
 
 #ifndef AVR
-#include "crc-16.h"
-
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>
 using namespace std;
-
-#else
-
-/* AVR headers define `_crc16_update` function. */
-#include <util/crc16.h>
-
-inline uint16_t crc_init() { return 0; }
-inline void crc_finalize(...) {}
-
 #endif // ifndef AVR
-
-
-uint16_t update_crc(uint16_t crc, uint8_t data);
-uint16_t finalize_crc(uint16_t crc);
 
 #include "Packet.h"
 

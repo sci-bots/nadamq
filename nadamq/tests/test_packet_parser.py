@@ -1,35 +1,29 @@
 from nose.tools import eq_
-from nadamq.NadaMq import cPacketParser, compute_crc16, PACKET_TYPES
+from nadamq.NadaMq import (cPacket, parse_from_string, compute_crc16,
+                           PACKET_TYPES)
 
 
 def test_parse_data():
-    parser = cPacketParser()
-    packet = parser.parse(create_data_packet_bytes(97, 'hello'))
-    eq_(packet.type_, PACKET_TYPES.DATA)
-    eq_(packet.iuid, 97)
-    eq_(packet.crc, compute_crc16('hello'))
-    eq_(packet.data(), 'hello')
+    a = cPacket(iuid=1234, type_=PACKET_TYPES.DATA, data='hello')
+    b = parse_from_string(a.tostring())
 
-    packet = parser.parse(create_data_packet_bytes(10, 'world'))
-    eq_(packet.type_, PACKET_TYPES.DATA)
-    eq_(packet.iuid, 10)
-    eq_(packet.crc, compute_crc16('world'))
-    eq_(packet.data(), 'world')
+    eq_(a.type_, b.type_)
+    eq_(a.iuid, b.iuid)
+    eq_(a.crc, b.crc)
+    eq_(a.data(), b.data())
 
 
 def test_parse_ack():
-    parser = cPacketParser()
-    packet = parser.parse(create_ack_packet_bytes(1231))
-    eq_(packet.type_, PACKET_TYPES.ACK)
-    eq_(packet.iuid, 1231)
+    a = cPacket(iuid=1010, type_=PACKET_TYPES.ACK)
+    b = parse_from_string(a.tostring())
+
+    eq_(a.type_, b.type_)
+    eq_(a.iuid, b.iuid)
 
 
 def test_parse_nack():
-    parser = cPacketParser()
-    packet = parser.parse(create_nack_packet_bytes(4328))
-    eq_(packet.type_, PACKET_TYPES.NACK)
-    eq_(packet.iuid, 4328)
+    a = cPacket(iuid=4321, type_=PACKET_TYPES.NACK)
+    b = parse_from_string(a.tostring())
 
-    packet = parser.parse(create_nack_packet_bytes(128, max_packet_length=13))
-    eq_(packet.type_, PACKET_TYPES.NACK)
-    eq_(packet.iuid, 128)
+    eq_(a.type_, b.type_)
+    eq_(a.iuid, b.iuid)

@@ -299,6 +299,11 @@ def byte_pair(value):
     return (chr((value >> 8) & 0x0FF), chr(value & 0x0FF))
 
 
+def parse_from_string(packet_str):
+    parser = cPacketParser()
+    return parser.parse(np.array([ord(v) for v in packet_str], dtype='uint8'))
+
+
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
                        PACKET_TYPE_ACK: 'ACK',
                        PACKET_TYPE_NACK: 'NACK',

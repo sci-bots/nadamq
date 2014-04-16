@@ -53,8 +53,7 @@ inline void write_packet(std::ostream &output, Packet const &packet) {
   uint8_t type_ = static_cast<uint8_t>(to_send.type());
   serialize_any(output, type_);
   if (type_ == Packet::packet_type::DATA) {
-    output << static_cast<uint8_t>(to_send.payload_length_);
-    serialize_any(output, to_send.payload_length_);
+    serialize_any(output, static_cast<uint8_t>(to_send.payload_length_));
     if (to_send.payload_length_ > 0) {
       output.write((char*)to_send.payload_buffer_, to_send.payload_length_);
     }

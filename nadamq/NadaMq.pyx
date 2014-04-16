@@ -51,7 +51,7 @@ cdef extern from "PacketParser.h":
         PACKET_TYPE_NACK "Packet::packet_type::NACK"
         PACKET_TYPE_DATA "Packet::packet_type::DATA"
 
-    cdef cppclass Packet:
+    cdef cppclass FixedPacket:
         uint16_t iuid_
         packet_type type_
         uint16_t payload_length_
@@ -59,13 +59,13 @@ cdef extern from "PacketParser.h":
         uchar *payload_buffer_
         uint16_t crc_
 
-        Packet()
+        FixedPacket()
         string data() except +
         uchar type()
         void type(uchar command_with_type_msb)
         void compute_crc()
 
-    cdef cppclass PacketParser "PacketParser<Packet>":
+    cdef cppclass PacketParser "PacketParser<FixedPacket>":
         int payload_bytes_received_
         int payload_bytes_expected_
         bint message_completed_
@@ -74,7 +74,7 @@ cdef extern from "PacketParser.h":
 
         PacketParser()
         void parse_byte(uchar *byte)
-        void reset(Packet *packet)
+        void reset(FixedPacket *packet)
 
 
 cdef extern from "crc-16.h":
@@ -91,16 +91,16 @@ cdef extern from "<sstream>" namespace "std":
 
 
 cdef extern from "PacketWriter.h":
-    void write_packet(stringstream output, Packet packet)
+    void write_packet(stringstream output, FixedPacket packet)
 
 
 cdef class cPacket:
-    cdef Packet *thisptr
+    cdef FixedPacket *thisptr
     cdef unsigned char *buffer_
 
     def __cinit__(self, type_=PACKET_TYPES.NONE, iuid=0, data=None,
                   buffer_=None, buffer_size=None):
-        self.thisptr = new Packet()
+        self.thisptr = new FixedPacket()
         if data is not None:
             if buffer_ is not None:
                 # Caller supplied a buffer, so check to make sure that the
@@ -245,31 +245,31 @@ cdef class cPacket:
         return self.tostring()
 
 
-#cdef class cPacketParser:
-    #cdef PacketParser *thisptr
+cdef class cPacketParser:
+    cdef PacketParser *thisptr
 
-    #def __cinit__(self):
-        #self.thisptr = new PacketParser()
+    def __cinit__(self):
+        self.thisptr = new PacketParser()
 
-    #def __dealloc__(self):
-        #del self.thisptr
+    def __dealloc__(self):
+        del self.thisptr
 
-    #def parse(self, uchar [:] packet_buffer):
-        #packet = cPacket()
-        #self.thisptr.reset(packet.thisptr)
-        #cdef int i
-        #for i in xrange(len(packet_buffer)):
-            #self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
-            #error = self.thisptr.parse_error_
-            #if error:
-                #self.thisptr.reset(packet.thisptr)
-                #raise RuntimeError, ('Error parsing packet: %s' %
-                                     #np.asarray(packet_buffer).tostring())
-        #return packet
+    def parse(self, uchar [:] packet_buffer):
+        packet = cPacket(buffer_size=len(packet_buffer))
+        self.thisptr.reset(packet.thisptr)
+        cdef int i
+        for i in xrange(len(packet_buffer)):
+            self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
+            error = self.thisptr.parse_error_
+            if error:
+                self.thisptr.reset(packet.thisptr)
+                raise RuntimeError, ('Error parsing packet [byte=%d]: %s' %
+                                     (i, np.asarray(packet_buffer).tostring()))
+        return packet
 
-    #property crc:
-        #def __get__(self):
-            #return self.thisptr.crc_
+    property crc:
+        def __get__(self):
+            return self.thisptr.crc_
 
 
 def crc_init():
@@ -297,33 +297,6 @@ def compute_crc16(data):
 
 def byte_pair(value):
     return (chr((value >> 8) & 0x0FF), chr(value & 0x0FF))
-
-
-def create_ack_packet_bytes(interface_unique_id):
-    iuid = byte_pair(interface_unique_id)
-
-    packet_str = '%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.ACK))
-
-    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
-
-
-def create_nack_packet_bytes(interface_unique_id, max_packet_length=0):
-    iuid = byte_pair(interface_unique_id)
-    packet_str = '%s%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.NACK),
-                               chr(max_packet_length))
-
-    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
-
-
-def create_data_packet_bytes(interface_unique_id, payload):
-    iuid = byte_pair(interface_unique_id)
-
-    crc = compute_crc16(payload)
-    packet_str = '%s%s%s%s%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.DATA),
-                                     chr(len(payload)), payload,
-                                     chr((crc >> 8) & 0x0FF), chr(crc & 0x0FF))
-
-    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
 
 
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',

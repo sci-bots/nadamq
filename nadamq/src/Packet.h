@@ -68,6 +68,21 @@ public:
     crc_ = finalize_crc(crc_);
     return crc_;
   }
+
+#ifndef AVR
+  /*
+   * Assume STL libraries are not available on AVR devices, so don't include
+   * methods using them when targeting AVR architectures.
+   * */
+  string data() const {
+    if (this->payload_buffer_ != NULL) {
+      return std::string((char *)this->payload_buffer_,
+                         this->payload_length_);
+    } else {
+      throw std::runtime_error("No buffer has been set/allocated.");
+    }
+  }
+#endif  // ifndef AVR
 };
 
 
@@ -161,21 +176,6 @@ public:
             this->payload_length_);
     return packet;
   }
-
-#ifndef AVR
-  /*
-   * Assume STL libraries are not available on AVR devices, so don't include
-   * methods using them when targeting AVR architectures.
-   * */
-  string data() const {
-    if (this->payload_buffer_ != NULL) {
-      return std::string((char *)this->payload_buffer_,
-                         this->payload_length_);
-    } else {
-      throw std::runtime_error("No buffer has been set/allocated.");
-    }
-  }
-#endif  // ifndef AVR
 };
 
 

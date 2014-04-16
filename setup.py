@@ -10,9 +10,13 @@ import version
 include_dirs = nadamq.get_includes()
 sys.path += include_dirs
 
+# Add the following to `extra_compile_args` to debug packet parser:
+#
+#     '-DVERBOSE_STATES'
 cy_config = dict(include_dirs=include_dirs, language='c++',
                  extra_compile_args=['-O3', '-Wfatal-errors'])
 
+print '[nadamq] sources: %s' % nadamq.get_sources()
 cy_exts = [Extension('nadamq.%s' % v, nadamq.get_sources()
                      + ['nadamq/%s.pyx' % v], **cy_config)
            for v in ('NadaMq', )]

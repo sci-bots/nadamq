@@ -1,8 +1,5 @@
-from nose.tools import ok_, eq_
-from nadamq.NadaMq import (cPacketParser, create_ack_packet_bytes,
-                           compute_crc16, create_data_packet_bytes,
-                           create_nack_packet_bytes, PACKET_NAME_BY_TYPE,
-                           PACKET_TYPES)
+from nose.tools import eq_
+from nadamq.NadaMq import cPacketParser, compute_crc16, PACKET_TYPES
 
 
 def test_parse_data():

@@ -1,8 +1,10 @@
 #cython: embedsignature=True
 cimport cython
+from cython.view cimport array as cvarray
 from cython.operator cimport dereference as deref
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t
+from libc.stdlib cimport calloc, free
 from libc.string cimport strcpy
 
 import re
@@ -93,31 +95,50 @@ cdef extern from "PacketWriter.h":
 
 cdef class cPacket:
     cdef Packet *thisptr
+    cdef unsigned char *buffer_
 
-    def __cinit__(self):
+    def __cinit__(self, type_=PACKET_TYPES.NONE, iuid=0, data=None,
+                  buffer_=None, buffer_size=None):
         self.thisptr = new Packet()
-
-    def set_buffer(self, unsigned char [:] data, overwrite=False):
-        if self.thisptr.payload_buffer_ != NULL and not overwrite:
-            raise RuntimeError('Packet already has a payload buffer '
-                               'allocated.  Must use `overwrite=True` to set '
-                               'buffer anyway.')
-        self.thisptr.payload_buffer_ = &data[0]
-        self.thisptr.buffer_size_ = len(data)
-        self.thisptr.payload_length_ = 0
+        if data is not None:
+            if buffer_ is not None:
+                # Caller supplied a buffer, so check to make sure that the
+                # length of the buffer is long enough to hold `data`.
+                if len(buffer_) < len(data):
+                    raise ValueError('Supplied buffer is not long enough to '
+                                     'hold `data`, %d < %d' % (len(buffer_),
+                                                               len(data)))
+                elif buffer_size is not None:
+                    raise ValueError('Buffer size must not be specified when a'
+                                     ' buffer is supplied, since the size is '
+                                     'implied by the size of the provided '
+                                     'buffer.')
+                else:
+                    self.set_buffer(buffer_)
+            elif buffer_size is None:
+                # Data was provided, but no buffer size was specified.  Use length
+                # of `data` as implied buffer size.
+                buffer_size = len(data)
+        if buffer_size is not None and buffer_size > 0:
+            self.buffer_ = <unsigned char *>calloc(buffer_size,
+                                                   sizeof(unsigned char))
+            self.set_buffer(<unsigned char [:buffer_size]>self.buffer_)
+        else:
+            self.buffer_ = NULL
+        self.iuid = iuid
+        self.type_ = type_
+        if data is not None:
+            self.set_data(data)
 
     def set_data(self, string data):
         if data.size() > self.thisptr.buffer_size_:
             raise ValueError('Data length is too large for buffer, %s > %s' %
-                             data.size(), self.thisptr.buffer_size_)
+                             (data.size(), self.thisptr.buffer_size_))
         strcpy(<char *>self.thisptr.payload_buffer_, data.c_str())
         self.thisptr.payload_length_ = data.size()
 
     def data(self):
         return self.thisptr.data()
-
-    def __dealloc__(self):
-        del self.thisptr
 
     def data_ptr(self):
         return <size_t>self.thisptr.payload_buffer_
@@ -142,6 +163,56 @@ cdef class cPacket:
             return self.thisptr.iuid_
         def __set__(self, value):
             self.thisptr.iuid_ = value
+
+    property buffer_size:
+        def __get__(self):
+            return self.thisptr.buffer_size_
+
+    def clear_buffer(self):
+        '''
+        Deallocate buffer (if it has been allocated).
+        '''
+        if self.buffer_ != NULL:
+            free(self.buffer_)
+            self.buffer_ = NULL
+
+    def realloc_buffer(self, buffer_size):
+        '''
+        Allocate the specified buffer size, deallocating the existing buffer,
+        if one has been allocated.
+        '''
+        self.clear_buffer()
+        self.alloc_buffer(buffer_size)
+
+    def alloc_buffer(self, buffer_size):
+        '''
+        Allocate the specified buffer size.
+        '''
+        if self.buffer_ != NULL:
+            raise RuntimeError('Buffer has already been allocated.')
+        self.buffer_ = <unsigned char *>calloc(buffer_size,
+                                                sizeof(unsigned char))
+        self.set_buffer(<unsigned char [:buffer_size]>self.buffer_,
+                        overwrite=True)
+
+    def set_buffer(self, unsigned char [:] data, overwrite=False):
+        '''
+        Assign the specified data buffer as the payload buffer of the packet.
+        '''
+        if self.thisptr.payload_buffer_ != NULL and not overwrite:
+            raise RuntimeError('Packet already has a payload buffer '
+                               'allocated.  Must use `overwrite=True` to set '
+                               'buffer anyway.')
+        self.thisptr.payload_buffer_ = &data[0]
+        self.thisptr.buffer_size_ = len(data)
+        self.thisptr.payload_length_ = 0
+
+    def __dealloc__(self):
+        del self.thisptr
+        self.clear_buffer()
+
+    def __str__(self):
+        return self.tostring()
 
 
 #cdef class cPacketParser:

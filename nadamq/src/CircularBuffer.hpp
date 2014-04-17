@@ -6,7 +6,6 @@
 #define MCP_CIRCULAR_BUFFER_GENERIC_H_
 
 #include <stdlib.h>
-#include <iostream>
 
 
 template<class T>

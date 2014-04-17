@@ -2,10 +2,12 @@
 #define ___BUFFER_ALLOCATOR__H___
 
 #include <stdint.h>
+#ifndef AVR
 #include <iostream>
 #include <iomanip>
 #include <iterator>
 #include <algorithm>
+#endif
 
 
 template <size_t BufferSize, size_t Count>
@@ -91,6 +93,7 @@ public:
     }
   }
 
+#ifndef AVR
   void dump() const {
     std::cout << std::hex;
     for (int i = 0; i < Count; i++) {
@@ -104,6 +107,7 @@ public:
       }
     }
   }
+#endif  // #ifndef AVR
 };
 
 

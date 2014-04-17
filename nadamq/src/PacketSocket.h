@@ -67,6 +67,7 @@ protected:
       return;
     }
     tx_packet_ = tx_queue_.pop_tail();
+#ifndef AVR
     std::cout << std::endl << "# TX packet info #" << std::endl
               << std::endl;
     std::cout << std::setw(23) << "uuid: " << tx_packet_.iuid_ << std::endl;
@@ -77,6 +78,7 @@ protected:
                 << std::string((char *)tx_packet_.payload_buffer_,
                                tx_packet_.payload_length_) << "'" << std::endl;
     }
+#endif  // #ifndef AVR
     allocator_->free_packet_buffer(tx_packet_);
     event_queue_.push('s');
   }
@@ -88,11 +90,13 @@ protected:
       return;
     }
     rx_packet_ = rx_queue_.pop_tail();
+#ifndef AVR
     std::cout << std::endl << "## Data packet info ##" << std::endl << std::endl;
     std::cout << std::setw(23) << "uuid: " << rx_packet_.iuid_ << std::endl;
     std::cout << std::setw(23) << "data payload: " << "'"
               << std::string((char *)rx_packet_.payload_buffer_,
                              rx_packet_.payload_length_) << "'" << std::endl;
+#endif  // #ifndef AVR
     /* Need to deallocate buffer here until we transfer ownership to somewhere
      * else, e.g., packet-stream. */
     /* TODO
@@ -278,22 +282,30 @@ public:
      * is common, the allocator buffer count could be increased to avoid this
      * scenario.
      * */
+#ifndef AVR
     std::cout << "# `handle_no_free_packets()` #" << std::endl;
+#endif  // #ifndef AVR
   }
 
   virtual void handle_queue_full() {
+#ifndef AVR
     std::cout << "# `handle_queue_full()` #" << std::endl;
+#endif  // #ifndef AVR
   }
 
   virtual void queue_nack_queue_full() {
+#ifndef AVR
     std::cout << "# `queue_nack_queue_full()` #" << std::endl;
+#endif  // #ifndef AVR
   }
 
   virtual void handle_packet() {
     /* # `handle_packet` #
      *
      * Process a fully parsed packet. */
+#ifndef AVR
     std::cout << "# `handle_packet()` #" << std::endl;
+#endif  // #ifndef AVR
     /* A full packet has been parsed successfully.  Push `packet_ready` event
      * onto queue to trigger update of receiving packet queue. */
     /* Packet type should be: `d` _(data)_, `a` _(ack)_, or `n` _(nack)_. */

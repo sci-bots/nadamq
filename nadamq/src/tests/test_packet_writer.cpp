@@ -15,7 +15,7 @@ int main(int argc, const char *argv[]) {
   uint8_t type = argv[3][0];
 
   std::ofstream outfile(argv[1], std::ofstream::binary);
-  OStreamPacketWriter<Packet, std::ostream> packet_writer(outfile);
+  StreamPacketWriter<Packet, std::ostream> packet_writer(outfile);
 
   Packet test_packet;
   test_packet.iuid_ = iuid;

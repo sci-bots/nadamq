@@ -40,8 +40,8 @@ void serialize_any(Stream &output, T const &value) {
 }
 
 
-template <typename Packet>
-inline void write_packet(std::ostream &output, Packet const &packet) {
+template <typename Stream, typename Packet>
+inline void write_packet(Stream &output, Packet const &packet) {
   Packet to_send = packet;
   /* Set the CRC checksum of the packet based on the contents of the payload.
    * */
@@ -94,35 +94,7 @@ public:
 
   Stream &output_;
 
-#if 0
   StreamPacketWriter(Stream &output) : output_(output) {}
-  virtual void write(packet_type const &packet) {
-    packet_type to_send = packet;
-    /* Set the CRC checksum of the packet based on the contents of the payload.
-     * */
-    to_send.compute_crc();
-    output_.write("~~~");
-    output_.write((char*)&(to_send.iuid_), 2);
-    uint8_t type_ = static_cast<uint8_t>to_send.type();
-    output_.write(type_);
-    output_.write(static_cast<uint8_t>(to_send.payload_length_));
-    if (to_send.payload_length_ > 0) {
-      output_.write((char*)to_send.payload_buffer_, to_send.payload_length_);
-    }
-    output_.write((char*)&(to_send.crc_), 2);
-  }
-#endif
-};
-
-template <typename Packet, typename Stream>
-class OStreamPacketWriter : public PacketWriter<Packet> {
-public:
-  typedef PacketWriter<Packet> base_type;
-  typedef typename base_type::packet_type packet_type;
-
-  Stream &output_;
-
-  OStreamPacketWriter(Stream &output) : output_(output) {}
 
   virtual void write(packet_type const &packet) {
     write_packet(output_, packet);

@@ -31,6 +31,10 @@ public:
 
 #ifdef AVR
   int operator () (uint8_t &command, uint16_t &count, uint8_t *data) {
+    return process_command(command, count, data);
+  }
+
+  int process_command() (uint8_t &command, uint16_t &count, uint8_t *data) {
     /* ## Call operator ##
      *
      * Arguments:

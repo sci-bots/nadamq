@@ -2,7 +2,7 @@ Import('env')
 
 socket_fsm_src = Command('packet_socket_fsm_actions.cpp',
                          'packet_socket_fsm_actions.rl',
-                         'ragel -G1 -o $TARGET $SOURCE')
+                         'ragel -G2 -o $TARGET $SOURCE')
 socket_fsm_dot = Command('packet_socket_fsm.dot', 'packet_socket_fsm_actions.rl',
                          'ragel -V -p -o $TARGET $SOURCE')
 socket_fsm_pdf = Command('packet_socket_fsm.pdf', socket_fsm_dot,
@@ -13,7 +13,7 @@ Depends(socket_fsm_dot, 'packet_socket_fsm.rl')
 Depends(socket_fsm_pdf, 'packet_socket_fsm.rl')
 
 packet_actions_src = Command('packet_actions.cpp', 'packet_actions.rl',
-                             'ragel -G1 -o $TARGET $SOURCE')
+                             'ragel -G2 -o $TARGET $SOURCE')
 packet_dot = Command('packet_actions.dot', 'packet_actions.rl',
                      'ragel -V -o $TARGET $SOURCE')
 packet_pdf = Command('packet_actions.pdf', packet_dot,

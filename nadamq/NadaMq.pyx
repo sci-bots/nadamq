@@ -40,8 +40,32 @@ cdef class _PacketTypes:
         self.DATA = PACKET_TYPE_DATA
 
 
+@cython.internal
+cdef class _Commands:
+    cdef:
+        readonly unsigned char ECHO
+        readonly unsigned char SYSTEM__RAM_SIZE
+        readonly unsigned char SYSTEM__RAM_DATA_SIZE
+        readonly unsigned char SYSTEM__RAM_BSS_SIZE
+        readonly unsigned char SYSTEM__RAM_HEAP_SIZE
+        readonly unsigned char SYSTEM__RAM_STACK_SIZE
+        readonly unsigned char SYSTEM__RAM_FREE
+        readonly unsigned char SYSTEM__SIMPLE_TYPE
+
+    def __cinit__(self):
+        self.ECHO = CMD_ECHO
+        self.SYSTEM__RAM_SIZE = CMD_SYSTEM__RAM_SIZE
+        self.SYSTEM__RAM_DATA_SIZE = CMD_SYSTEM__RAM_DATA_SIZE
+        self.SYSTEM__RAM_BSS_SIZE = CMD_SYSTEM__RAM_BSS_SIZE
+        self.SYSTEM__RAM_HEAP_SIZE = CMD_SYSTEM__RAM_HEAP_SIZE
+        self.SYSTEM__RAM_STACK_SIZE = CMD_SYSTEM__RAM_STACK_SIZE
+        self.SYSTEM__RAM_FREE = CMD_SYSTEM__RAM_FREE
+        self.SYSTEM__SIMPLE_TYPE = CMD_SYSTEM__SIMPLE_TYPE
+
+
 PACKET_TYPES = _PacketTypes()
 FLAGS = _Flags()
+COMMANDS = _Commands()
 
 
 cdef extern from "PacketParser.h":
@@ -92,6 +116,17 @@ cdef extern from "<sstream>" namespace "std":
 
 cdef extern from "PacketWriter.h":
     void write_packet(stringstream output, FixedPacket packet)
+
+
+cdef extern from "SimpleCommand.h":
+    unsigned char CMD_ECHO "CommandProcessor::CMD_ECHO"
+    unsigned char CMD_SYSTEM__RAM_SIZE "CommandProcessor::CMD_SYSTEM__RAM_SIZE"
+    unsigned char CMD_SYSTEM__RAM_DATA_SIZE "CommandProcessor::CMD_SYSTEM__RAM_DATA_SIZE"
+    unsigned char CMD_SYSTEM__RAM_BSS_SIZE "CommandProcessor::CMD_SYSTEM__RAM_BSS_SIZE"
+    unsigned char CMD_SYSTEM__RAM_HEAP_SIZE "CommandProcessor::CMD_SYSTEM__RAM_HEAP_SIZE"
+    unsigned char CMD_SYSTEM__RAM_STACK_SIZE "CommandProcessor::CMD_SYSTEM__RAM_STACK_SIZE"
+    unsigned char CMD_SYSTEM__RAM_FREE "CommandProcessor::CMD_SYSTEM__RAM_FREE"
+    unsigned char CMD_SYSTEM__SIMPLE_TYPE "CommandProcessor::CMD_SYSTEM__SIMPLE_TYPE"
 
 
 cdef class cPacket:
@@ -308,3 +343,13 @@ PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
                        PACKET_TYPE_ACK: 'ACK',
                        PACKET_TYPE_NACK: 'NACK',
                        PACKET_TYPE_DATA: 'DATA'}
+
+COMMAND_NAME_BY_COMMAND = {CMD_ECHO: 'ECHO',
+                           CMD_SYSTEM__RAM_SIZE: 'SYSTEM__RAM_SIZE',
+                           CMD_SYSTEM__RAM_DATA_SIZE: 'SYSTEM__RAM_DATA_SIZE',
+                           CMD_SYSTEM__RAM_BSS_SIZE: 'SYSTEM__RAM_BSS_SIZE',
+                           CMD_SYSTEM__RAM_HEAP_SIZE: 'SYSTEM__RAM_HEAP_SIZE',
+                           CMD_SYSTEM__RAM_STACK_SIZE:
+                           'SYSTEM__RAM_STACK_SIZE',
+                           CMD_SYSTEM__RAM_FREE: 'SYSTEM__RAM_FREE',
+                           CMD_SYSTEM__SIMPLE_TYPE: 'SYSTEM__SIMPLE_TYPE'}

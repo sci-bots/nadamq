@@ -1,3 +1,6 @@
+#ifndef ___CRC_COMMON__H___
+#define ___CRC_COMMON__H___
+
 #include <stdint.h>
 
 #ifndef AVR
@@ -15,3 +18,5 @@ inline void crc_finalize(...) {}
 
 uint16_t update_crc(uint16_t crc, uint8_t data);
 uint16_t finalize_crc(uint16_t crc);
+
+#endif  // #ifndef ___CRC_COMMON__H___

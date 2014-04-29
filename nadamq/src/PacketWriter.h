@@ -12,10 +12,16 @@ using namespace std;
 
 #include "Packet.h"
 
+#ifdef AVR
+typedef const uint8_t stream_byte_type;
+#else
+typedef const char stream_byte_type;
+#endif
+
 
 template <typename Stream, typename T>
 void serialize_any(Stream &output, T const &value) {
-  const char* proxy = reinterpret_cast<const char *>(&value);
+  stream_byte_type* proxy = reinterpret_cast<stream_byte_type *>(&value);
   /* Arduino and Intel x86 processors store [low byte at lower address][1]
    * _(i.e., little-endian)_, so we must traverse the bytes in reverse order
    * when serializing to [network-byte-order][2].
@@ -47,7 +53,7 @@ inline void write_packet(Stream &output, Packet const &packet) {
    * */
   to_send.compute_crc();
 
-  char startflag[] = "|||";
+  stream_byte_type startflag[] = "|||";
   output.write(startflag, 3);
   serialize_any(output, to_send.iuid_);
   uint8_t type_ = static_cast<uint8_t>(to_send.type());
@@ -55,7 +61,8 @@ inline void write_packet(Stream &output, Packet const &packet) {
   if (type_ == Packet::packet_type::DATA) {
     serialize_any(output, static_cast<uint8_t>(to_send.payload_length_));
     if (to_send.payload_length_ > 0) {
-      output.write((char*)to_send.payload_buffer_, to_send.payload_length_);
+      output.write((stream_byte_type*)to_send.payload_buffer_,
+                   to_send.payload_length_);
     }
     serialize_any(output, to_send.crc_);
   }

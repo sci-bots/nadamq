@@ -1,3 +1,7 @@
+#ifdef ARDUINO
+#include <Arduino.h>
+#endif  // #ifdef ARDUINO
+
 %%{
 
 machine packet_grammar;
@@ -7,6 +11,11 @@ action error {
   std::cout << "[error]: " << std::hex << static_cast<int>(*p) << std::dec
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[error]: ");
+  Serial.print(static_cast<int>(*p));
+  Serial.println("");
+#endif  // #ifdef ARDUINO_DEBUG
   parse_error_ = true;
 }
 
@@ -14,6 +23,9 @@ action startflag_received {
 #ifdef VERBOSE_STATES
   std::cout << "[startflag_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.println("[startflag_received]");
+#endif  // #ifdef ARDUINO_DEBUG
   // We're starting to process a new packet, so reset completed status.
   message_completed_ = false;
 }
@@ -46,6 +58,12 @@ action length_received {
 #ifdef VERBOSE_STATES
   std::cout << "[length_received]: " << static_cast<int>(*p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[len]: ");
+  Serial.print(static_cast<int>(*p));
+  Serial.print("/");
+  Serial.println(packet_->buffer_size_);
+#endif  // #ifdef ARDUINO_DEBUG
   payload_bytes_expected_ = *p;
   if (payload_bytes_expected_ > packet_->buffer_size_) {
 #ifndef AVR
@@ -61,6 +79,9 @@ action payload_start {
   std::cout << "[payload_start] expected size: " << payload_bytes_expected_
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.println("[payload]");
+#endif  // #ifdef ARDUINO_DEBUG
   /* Resize the payload buffer to fit the expected payload size. */
   // packet_->reallocate_buffer(payload_bytes_expected_);
   // Reset received-bytes counter.
@@ -73,6 +94,12 @@ action payload_byte_received {
   std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[b] [");
+  Serial.print(static_cast<char>(*p));
+  Serial.print("] byte: ");
+  Serial.println(payload_bytes_received_);
+#endif  // #ifdef ARDUINO_DEBUG
   /* We received another payload octet, so:
    *
    *   - Update CRC checksum.
@@ -215,6 +242,20 @@ inline void PacketParser<Packet>::parse_byte(uint8_t *byte) {
   }
 
   %% write exec;
+
+#ifdef ARDUINO_DEBUG
+  Serial.print("[p] (");
+  Serial.print(cs);
+  Serial.print(") ");
+  if (*byte > 20 && *byte < 128) {
+    Serial.print("'");
+    Serial.print(static_cast<char>(*byte));
+    Serial.print("'");
+  } else {
+    Serial.print(static_cast<int>(*byte));
+  }
+  Serial.println("");
+#endif  // #ifdef ARDUINO_DEBUG
 }
 
 

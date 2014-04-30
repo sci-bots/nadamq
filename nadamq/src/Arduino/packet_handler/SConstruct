@@ -39,11 +39,16 @@ Export('SOFTWARE_VERSION')
 
 Import('PYTHON_LIB')
 
+nanopb_home = path('~/.virtualenvs/md/src/nanopb').expand()
+
 context = ArduinoBuildContext(ARGUMENTS)
 arduino_hex = context.build(extra_sources=[path(p).abspath() for p in
                                            ('../../crc_common.cpp',
-                                            '../../packet_actions.cpp')],
+                                            '../../packet_actions.cpp',
+                                            'simple.pb.c')] +
+                                            nanopb_home.files('*encode.c'),
                             register_upload=True,
-                            env_dict={'CPPPATH': [path('../../..').abspath(),
+                            env_dict={'CPPPATH': [nanopb_home.abspath(),
+                                                  path('../../..').abspath(),
                                                   path('../..').abspath(),
                                                   path('.').abspath()]})

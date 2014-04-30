@@ -1,3 +1,4 @@
+from pprint import pprint
 import time
 
 from nadamq.NadaMq import (cPacket, PACKET_TYPES, parse_from_string, COMMANDS)
@@ -38,6 +39,7 @@ class DeviceProxy(object):
         self.serial.write(packet.tostring())
         time.sleep(.1)
         data = self.serial.read(self.serial.inWaiting())
+        pprint(data)
         in_packet = parse_from_string(data)
         command = ord(in_packet.data()[0])
         result_type = self.result_types.get(command, None)
@@ -54,5 +56,5 @@ class DeviceProxy(object):
         else:
             result = None
         if result is None:
-            return packet
+            return in_packet
         return result

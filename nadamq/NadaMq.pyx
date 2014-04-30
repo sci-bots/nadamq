@@ -51,6 +51,7 @@ cdef class _Commands:
         readonly unsigned char SYSTEM__RAM_STACK_SIZE
         readonly unsigned char SYSTEM__RAM_FREE
         readonly unsigned char SYSTEM__SIMPLE_TYPE
+        readonly unsigned char TEST_PROTOBUF
 
     def __cinit__(self):
         self.ECHO = CMD_ECHO
@@ -61,6 +62,7 @@ cdef class _Commands:
         self.SYSTEM__RAM_STACK_SIZE = CMD_SYSTEM__RAM_STACK_SIZE
         self.SYSTEM__RAM_FREE = CMD_SYSTEM__RAM_FREE
         self.SYSTEM__SIMPLE_TYPE = CMD_SYSTEM__SIMPLE_TYPE
+        self.TEST_PROTOBUF = CMD_TEST_PROTOBUF
 
 
 PACKET_TYPES = _PacketTypes()
@@ -127,6 +129,7 @@ cdef extern from "SimpleCommand.h":
     unsigned char CMD_SYSTEM__RAM_STACK_SIZE "CommandProcessor::CMD_SYSTEM__RAM_STACK_SIZE"
     unsigned char CMD_SYSTEM__RAM_FREE "CommandProcessor::CMD_SYSTEM__RAM_FREE"
     unsigned char CMD_SYSTEM__SIMPLE_TYPE "CommandProcessor::CMD_SYSTEM__SIMPLE_TYPE"
+    unsigned char CMD_TEST_PROTOBUF "CommandProcessor::CMD_TEST_PROTOBUF"
 
 
 cdef class cPacket:
@@ -352,4 +355,5 @@ COMMAND_NAME_BY_COMMAND = {CMD_ECHO: 'ECHO',
                            CMD_SYSTEM__RAM_STACK_SIZE:
                            'SYSTEM__RAM_STACK_SIZE',
                            CMD_SYSTEM__RAM_FREE: 'SYSTEM__RAM_FREE',
-                           CMD_SYSTEM__SIMPLE_TYPE: 'SYSTEM__SIMPLE_TYPE'}
+                           CMD_SYSTEM__SIMPLE_TYPE: 'SYSTEM__SIMPLE_TYPE',
+                           CMD_TEST_PROTOBUF: 'TEST_PROTOBUF'}

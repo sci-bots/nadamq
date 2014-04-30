@@ -3,12 +3,38 @@
 
 
 #include "PacketWriter.h"
+#if AVR
+#include "pb_encode.h"
+#include "pb_decode.h"
+#include "simple.pb.h"
+#endif  // #if AVR
+
 
 struct SimpleType {
   float a;
   uint32_t b;
   int16_t c;
 };
+
+
+#if AVR
+uint16_t test_protobuf(uint8_t *buffer, uint16_t buffer_size) {
+  bool status = false;
+  /* Create a stream that will write to our buffer. */
+  pb_ostream_t stream = pb_ostream_from_buffer(buffer, buffer_size);
+
+  CommandResponse response;
+  response.type = CommandType_RAM_FREE;
+  response.has_ram_free = true;
+  response.ram_free.result = 1234;
+  status = pb_encode(&stream, CommandResponse_fields, &response);
+  if (status) {
+    return stream.bytes_written;
+  } else {
+    return 0;
+  }
+}
+#endif  // #if AVR
 
 
 class CommandProcessor {
@@ -28,13 +54,14 @@ public:
   static const uint8_t CMD_SYSTEM__RAM_STACK_SIZE = 0x15;
   static const uint8_t CMD_SYSTEM__RAM_FREE       = 0x16;
   static const uint8_t CMD_SYSTEM__SIMPLE_TYPE    = 0x17;
+  static const uint8_t CMD_TEST_PROTOBUF          = 0x18;
 
 #ifdef AVR
   int operator () (uint8_t &command, uint16_t &count, uint8_t *data) {
     return process_command(command, count, data);
   }
 
-  int process_command() (uint8_t &command, uint16_t &count, uint8_t *data) {
+  int process_command(uint8_t &command, uint16_t &count, uint8_t *data) {
     /* ## Call operator ##
      *
      * Arguments:
@@ -80,6 +107,9 @@ public:
         simple_type_result[0].b = 87;
         simple_type_result[0].c = -9876;
         count = sizeof(simple_type_result[0]);
+        break;
+      case CMD_TEST_PROTOBUF:
+        count = test_protobuf(data, count);
         break;
       default:
         break;

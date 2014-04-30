@@ -4,7 +4,9 @@
 #include "packet_handler.h"
 
 
-uint8_t packet_buffer[32];
+uint8_t protobuf[128];
+#define PACKET_SIZE   64
+uint8_t packet_buffer[PACKET_SIZE];
 char output_buffer[128];
 
 typedef CommandPacketHandler<Stream, CommandProcessor> Handler;
@@ -22,7 +24,7 @@ Handler handler(Serial, command_processor);
 Reactor reactor(parser, Serial, handler);
 
 void setup() {
-  packet.reset_buffer(32, &packet_buffer[0]);
+  packet.reset_buffer(PACKET_SIZE, &packet_buffer[0]);
   parser.reset(&packet);
   Serial.begin(115200);
   Serial.print("# ready (");

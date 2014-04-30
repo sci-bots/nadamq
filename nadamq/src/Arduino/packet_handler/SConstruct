@@ -46,7 +46,7 @@ arduino_hex = context.build(extra_sources=[path(p).abspath() for p in
                                            ('../../crc_common.cpp',
                                             '../../packet_actions.cpp',
                                             'simple.pb.c')] +
-                                            nanopb_home.files('*encode.c'),
+                                            nanopb_home.files('*code.c'),
                             register_upload=True,
                             env_dict={'CPPPATH': [nanopb_home.abspath(),
                                                   path('../../..').abspath(),

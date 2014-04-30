@@ -3,38 +3,9 @@
 
 
 #include "PacketWriter.h"
-#if AVR
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "simple.pb.h"
-#endif  // #if AVR
-
-
-struct SimpleType {
-  float a;
-  uint32_t b;
-  int16_t c;
-};
-
-
-#if AVR
-uint16_t test_protobuf(uint8_t *buffer, uint16_t buffer_size) {
-  bool status = false;
-  /* Create a stream that will write to our buffer. */
-  pb_ostream_t stream = pb_ostream_from_buffer(buffer, buffer_size);
-
-  CommandResponse response;
-  response.type = CommandType_RAM_FREE;
-  response.has_ram_free = true;
-  response.ram_free.result = 1234;
-  status = pb_encode(&stream, CommandResponse_fields, &response);
-  if (status) {
-    return stream.bytes_written;
-  } else {
-    return 0;
-  }
-}
-#endif  // #if AVR
 
 
 class CommandProcessor {
@@ -46,22 +17,13 @@ class CommandProcessor {
    * a response.  If the integer return value of the call is zero, the call is assumed to have
    * no response required.  Otherwise, the arguments contain must contain response values. */
 public:
-  static const uint8_t CMD_ECHO                   = 0x10;
-  static const uint8_t CMD_SYSTEM__RAM_SIZE       = 0x11;
-  static const uint8_t CMD_SYSTEM__RAM_DATA_SIZE  = 0x12;
-  static const uint8_t CMD_SYSTEM__RAM_BSS_SIZE   = 0x13;
-  static const uint8_t CMD_SYSTEM__RAM_HEAP_SIZE  = 0x14;
-  static const uint8_t CMD_SYSTEM__RAM_STACK_SIZE = 0x15;
-  static const uint8_t CMD_SYSTEM__RAM_FREE       = 0x16;
-  static const uint8_t CMD_SYSTEM__SIMPLE_TYPE    = 0x17;
-  static const uint8_t CMD_TEST_PROTOBUF          = 0x18;
-
-#ifdef AVR
-  int operator () (uint8_t &command, uint16_t &count, uint8_t *data) {
-    return process_command(command, count, data);
+  int operator () (CommandRequest &request, uint16_t buffer_size,
+                   uint8_t *buffer) {
+    return process_command(request, buffer_size, buffer);
   }
 
-  int process_command(uint8_t &command, uint16_t &count, uint8_t *data) {
+  int process_command(CommandRequest &request, uint16_t buffer_size,
+                      uint8_t *buffer) {
     /* ## Call operator ##
      *
      * Arguments:
@@ -71,52 +33,47 @@ public:
      *  - `data`: The arguments buffer.
      *
      * __NB__ It is currently the responsibility */
-    uint32_t *u32_result = reinterpret_cast<uint32_t *>(data);
-    uint16_t *u16_result = reinterpret_cast<uint16_t *>(data);
-    float *f32_result = reinterpret_cast<float *>(data);
-    SimpleType *simple_type_result = reinterpret_cast<SimpleType *>(data);
-    switch (command) {
-      case CMD_ECHO:
+    CommandResponse response;
+    response.type = request.type;
+    pb_ostream_t stream = pb_ostream_from_buffer(buffer, buffer_size);
+    switch (request.type) {
+      case CommandType_ECHO:
+        response.has_echo = true;
         break;
-      case CMD_SYSTEM__RAM_SIZE:
-        u32_result[0] = ram_size();
-        count = sizeof(u32_result[0]);
+      case CommandType_RAM_SIZE:
+        response.has_ram_size = true;
+        response.ram_size.result = ram_size();
         break;
-      case CMD_SYSTEM__RAM_DATA_SIZE:
-        u32_result[0] = data_size();
-        count = sizeof(u32_result[0]);
+      case CommandType_RAM_DATA_SIZE:
+        response.has_ram_data_size = true;
+        response.ram_data_size.result = data_size();
         break;
-      case CMD_SYSTEM__RAM_BSS_SIZE:
-        u32_result[0] = bss_size();
-        count = sizeof(u32_result[0]);
+      case CommandType_RAM_BSS_SIZE:
+        response.has_ram_bss_size = true;
+        response.ram_bss_size.result = bss_size();
         break;
-      case CMD_SYSTEM__RAM_HEAP_SIZE:
-        u32_result[0] = heap_size();
-        count = sizeof(u32_result[0]);
+      case CommandType_RAM_HEAP_SIZE:
+        response.has_ram_heap_size = true;
+        response.ram_heap_size.result = heap_size();
         break;
-      case CMD_SYSTEM__RAM_STACK_SIZE:
-        u32_result[0] = stack_size();
-        count = sizeof(u32_result[0]);
+      case CommandType_RAM_STACK_SIZE:
+        response.has_ram_stack_size = true;
+        response.ram_stack_size.result = stack_size();
         break;
-      case CMD_SYSTEM__RAM_FREE:
-        u32_result[0] = free_memory();
-        count = sizeof(u32_result[0]);
-        break;
-      case CMD_SYSTEM__SIMPLE_TYPE:
-        simple_type_result[0].a = 1.234;
-        simple_type_result[0].b = 87;
-        simple_type_result[0].c = -9876;
-        count = sizeof(simple_type_result[0]);
-        break;
-      case CMD_TEST_PROTOBUF:
-        count = test_protobuf(data, count);
+      case CommandType_RAM_FREE:
+        response.has_ram_free = true;
+        response.ram_free.result = free_memory();
         break;
       default:
         break;
     }
-    return 0;
+    bool status = pb_encode(&stream, CommandResponse_fields, &response);
+    if (status) {
+      return stream.bytes_written;
+    } else {
+      return 0;
+    }
   }
-#endif  // #ifdef AVR
 };
 
 
@@ -152,18 +109,17 @@ class CommandPacketHandler {
     uint16_t payload_bytes_to_process = packet.payload_length_;
     if (packet.type() == Packet::packet_type::DATA &&
         payload_bytes_to_process > 0) {
-      uint8_t *proxy = packet.payload_buffer_;
-      /* Interpret first byte of payload as command byte. */
-      uint8_t &command = proxy[0];
-      proxy++; payload_bytes_to_process--;
-      /* Call `process_command` to execute handling code based on the command.
-       * We pass `proxy`, which points to the start of the data for the
-       * command.
-       *
-       * __NB__ It is currently the responsibility of `process_command` to
-       * de-serialize any arguments from `proxy` as necessary. */
-      command_processor_(command, payload_bytes_to_process, proxy);
-      packet.payload_length_ = payload_bytes_to_process + 1;
+      CommandRequest request;
+      bool status = false;
+      pb_istream_t stream = pb_istream_from_buffer(packet.payload_buffer_,
+                                                   packet.payload_length_);
+      status = pb_decode(&stream, CommandRequest_fields, &request);
+      if (!status) {
+        packet.type(Packet::packet_type::NACK);
+      } else {
+        packet.payload_length_ = command_processor_.process_command(
+            request, packet.buffer_size_, packet.payload_buffer_);
+      }
     }
     write_packet(ostream_, packet);
   }

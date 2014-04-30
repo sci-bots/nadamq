@@ -1,5 +1,5 @@
 import re
-from pprint import pprint
+from pprint import pprint, pformat
 import time
 
 from nadamq.NadaMq import (cPacket, PACKET_TYPES, parse_from_string)
@@ -210,12 +210,14 @@ class NodeProxy(object):
                          data=request)
         self._stream.write(packet.tostring())
         time.sleep(.1)
-        response_packet = parse_from_string(self._stream.read())
+        data = self._stream.read()
+        response_packet = parse_from_string(data)
         if response_packet.type_ == PACKET_TYPES.DATA:
             return (self._command_request_manager
                     .response(command_name, response_packet.data()))
         else:
-            raise ValueError('Invalid response.')
+            raise ValueError('Invalid response. (%s).\n"%s"' %
+                             (response_packet.type_, pformat(data)))
 
 
 class Stream(object):

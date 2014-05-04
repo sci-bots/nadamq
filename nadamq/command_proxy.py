@@ -1,8 +1,10 @@
+from datetime import datetime
 import re
-from pprint import pprint, pformat
+from pprint import pformat
 import time
 
-from nadamq.NadaMq import (cPacket, PACKET_TYPES, parse_from_string)
+import numpy as np
+from nadamq.NadaMq import (cPacket, PACKET_TYPES, cPacketParser)
 import serial
 
 
@@ -15,7 +17,7 @@ def camelcase_to_underscore(value):
                   value).lower().strip('_')
 
 
-class CommandRequestManager(object):
+class CommandRequestManagerBase(object):
     '''
     This class acts as a factory for creating Protocol buffer command request
     objects.
@@ -37,19 +39,13 @@ class CommandRequestManager(object):
         message MYCommandBResponse { required int8 result = 1; }
 
         message CommandRequest {
-            // Identifies which field is filled in.
-            required CommandType type = 1;
-
-            optional MyCommandARequest my_command_a = 2;
-            optional MyCommandBRequest my_command_b = 3;
+            optional MyCommandARequest my_command_a = 1;
+            optional MyCommandBRequest my_command_b = 2;
         }
 
         message CommandResponse {
-            // Identifies which field is filled in.
-            required CommandType type = 1;
-
-            optional MyCommandAResponse my_command_a = 2;
-            optional MyCommandBResponse my_command_b = 3;
+            optional MyCommandAResponse my_command_a = 1;
+            optional MyCommandBResponse my_command_b = 2;
         }
 
     Specifically, the following conditions must be met:
@@ -117,24 +113,46 @@ class CommandRequestManager(object):
         the message.
         '''
         lowercase = camelcase_to_underscore(request_type_name)
-        kwargs.update({lowercase: self.request_types[request_type_name],
-                       'type': self.command_type_class.Value(lowercase
-                                                             .upper())})
-        return self.request_class(**kwargs).SerializeToString()
+        command_kwargs = {lowercase:
+                          self.request_types[request_type_name](**kwargs)}
+        return self.request_class(**command_kwargs).SerializeToString()
 
-    def response(self, command_name, byte_data):
+    def response(self, byte_data):
+        '''
+        Return a Protocol Buffer response object deserialized from the provided
+        string of encoded message bytes.
+        '''
+        response = self.response_class.FromString(byte_data)
+        sub_response = response.ListFields()[0][1]
+        return sub_response
+
+
+class CommandRequestManagerDebug(CommandRequestManagerBase):
+    def response(self, byte_data):
+        '''
+        Return a Protocol Buffer response object deserialized from the provided
+        string of encoded message bytes, along with the raw byte data.  This is
+        useful for determining the length of the encoded protocol buffer
+        message, and/or debugging.
+        '''
+        sub_response = super(CommandRequestManagerDebug,
+                             self).response(byte_data)
+        return sub_response, byte_data
+
+
+class CommandRequestManager(CommandRequestManagerBase):
+    def response(self, byte_data):
         '''
         Return a response based on the provided string of encoded message
         bytes.
+
+        By convention, we consider the return value of a response message to
+        correspond to the value of the field named `result`.  If there is no
+        `result` field, return the specific response object _(e.g.,
+        `MyCommandAResponse`)_ to give the caller a chance to manually retrieve
+        the return value.
         '''
-        response = self.response_class.FromString(byte_data)
-        lower_name = camelcase_to_underscore(command_name)
-        sub_response = getattr(response, lower_name)
-        # By convention, we consider the return value of a response message to
-        # correspond to the value of the field named `result`.  If there is no
-        # `result` field, return the specific response object _(e.g.,
-        # `MyCommandAResponse`)_ to give the caller a chance to manually
-        # retrieve the return value.
+        sub_response = super(CommandRequestManager, self).response(byte_data)
         return getattr(sub_response, 'result', sub_response)
 
 
@@ -199,7 +217,28 @@ class NodeProxy(object):
                 #
                 # [1]: http://en.wikipedia.org/wiki/Partial_application
                 def f(**kwargs):
-                    return self._do_request_from_command_name(name, **kwargs)
+                    retry_count = kwargs.pop('retry_count', 5)
+                    remote_address = kwargs.pop('remote_address', None)
+                    if remote_address is not None:
+                        def _remote_func(**kwargs):
+                            request = (self._command_request_manager
+                                       .request(name, **kwargs))
+                            return (getattr(self, 'forward_i2c_request')
+                                    (address=remote_address,
+                                     request=request))
+                        command_func = _remote_func
+                    else:
+                        command_func = (lambda **kwargs:
+                                        self._do_request_from_command_name(
+                                            name, **kwargs))
+                    for i in xrange(retry_count):
+                        try:
+                            return command_func(**kwargs)
+                        except ValueError, exception:
+                            exception_str = str(exception)
+                            if not exception_str.startswith('Timeout'):
+                                raise
+                    raise exception
                 return f
             method_name = camelcase_to_underscore(command_name)
             setattr(self, method_name, _do_request(self, command_name))
@@ -208,13 +247,35 @@ class NodeProxy(object):
         request = self._command_request_manager.request(command_name, **kwargs)
         packet = cPacket(iuid=iuid, type_=PACKET_TYPES.DATA,
                          data=request)
+        # Flush any remaining bytes from stream.
+        self._stream.read()
+        # Write request packet to stream.
         self._stream.write(packet.tostring())
-        time.sleep(.1)
-        data = self._stream.read()
-        response_packet = parse_from_string(data)
+        parser = cPacketParser()
+        data = np.array([ord(v) for v in self._stream.read()], dtype='uint8')
+        start = datetime.now()
+        wait_counts = 0
+        try:
+            result = parser.parse(data)
+            while not result:
+                data = np.array([ord(v) for v in self._stream.read()],
+                                dtype='uint8')
+                result = parser.parse(data)
+                if (datetime.now() - start).total_seconds() > .5:
+                    raise ValueError('Timeout while waiting for packet.\n"%s"'
+                                     % (pformat(data.tostring())))
+                if not result:
+                    time.sleep(0.0001)
+                    wait_counts += 1
+                else:
+                    response_packet = result
+                    break
+        except RuntimeError:
+            raise ValueError('Error parsing response packet.\n"%s"' %
+                             (pformat(data.tostring())))
         if response_packet.type_ == PACKET_TYPES.DATA:
             return (self._command_request_manager
-                    .response(command_name, response_packet.data()))
+                    .response(response_packet.data()))
         else:
             raise ValueError('Invalid response. (%s).\n"%s"' %
                              (response_packet.type_, pformat(data)))

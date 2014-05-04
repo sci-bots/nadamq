@@ -247,25 +247,37 @@ cdef class cPacket:
 
 cdef class cPacketParser:
     cdef PacketParser *thisptr
+    cdef object packet
 
-    def __cinit__(self):
+    def __cinit__(self, buffer_size=1024):
         self.thisptr = new PacketParser()
+        self.packet = cPacket(buffer_size=buffer_size)
+        self.reset()
 
     def __dealloc__(self):
         del self.thisptr
 
+    def reset(self):
+        self.thisptr.reset((<cPacket>self.packet).thisptr)
+
     def parse(self, uchar [:] packet_buffer):
-        packet = cPacket(buffer_size=len(packet_buffer))
-        self.thisptr.reset(packet.thisptr)
         cdef int i
         for i in xrange(len(packet_buffer)):
             self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
-            error = self.thisptr.parse_error_
-            if error:
-                self.thisptr.reset(packet.thisptr)
+            if self.error:
                 raise RuntimeError, ('Error parsing packet [byte=%d]: %s' %
                                      (i, np.asarray(packet_buffer).tostring()))
-        return packet
+            elif self.message_completed:
+                return self.packet
+        return False
+
+    property message_completed:
+        def __get__(self):
+            return self.thisptr.message_completed_
+
+    property error:
+        def __get__(self):
+            return self.thisptr.parse_error_
 
     property crc:
         def __get__(self):

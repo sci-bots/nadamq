@@ -128,6 +128,18 @@ class CommandRequestManagerBase(object):
 
 
 class CommandRequestManagerDebug(CommandRequestManagerBase):
+    def request(self, request_type_name, **kwargs):
+        encoded_request = super(CommandRequestManagerDebug,
+                                self).request(request_type_name, **kwargs)
+        print '# `%sRequest` #' % request_type_name
+        print ''
+        print ' - Arguments:'
+        for k, v in kwargs.iteritems():
+            print '  - `%s`: `%s`' % (k, v)
+        print ' - Encoded: `%s`' % [hex(ord(c)) for c in encoded_request]
+        print ''
+        return encoded_request
+
     def response(self, byte_data):
         '''
         Return a Protocol Buffer response object deserialized from the provided

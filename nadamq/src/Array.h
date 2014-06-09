@@ -1,3 +1,6 @@
+#ifndef ___ARRAY__H___
+#define ___ARRAY__H___
+
 #include <stdint.h>
 
 
@@ -13,3 +16,5 @@ public:
   uint8_t length;
   uint16_t *data;
 };
+
+#endif  // #ifndef ___ARRAY__H___

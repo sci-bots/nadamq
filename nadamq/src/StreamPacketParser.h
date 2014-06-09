@@ -43,6 +43,7 @@ public:
     if (parser_.parse_error_) {
       return 'e';
     }
+    return 0;
   }
   virtual void reset() { parser_.reset(); }
   virtual void reset(packet_type *packet) { parser_.reset(packet); }

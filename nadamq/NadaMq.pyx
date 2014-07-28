@@ -5,7 +5,7 @@ from cython.operator cimport dereference as deref
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t
 from libc.stdlib cimport malloc, free
-from libc.string cimport strcpy
+from libc.string cimport memcpy
 
 import re
 
@@ -149,7 +149,7 @@ cdef class cPacket:
         if data.size() > self.thisptr.buffer_size_:
             raise ValueError('Data length is too large for buffer, %s > %s' %
                              (data.size(), self.thisptr.buffer_size_))
-        strcpy(<char *>self.thisptr.payload_buffer_, data.c_str())
+        memcpy(self.thisptr.payload_buffer_, data.c_str(), data.size())
         self.thisptr.payload_length_ = data.size()
         self.thisptr.compute_crc()
 

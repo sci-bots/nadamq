@@ -58,7 +58,7 @@ inline void write_packet(Stream &output, Packet const &packet) {
   serialize_any(output, to_send.iuid_);
   uint8_t type_ = static_cast<uint8_t>(to_send.type());
   serialize_any(output, type_);
-  if (type_ == Packet::packet_type::DATA) {
+  if (to_send.type() == Packet::packet_type::DATA) {
     serialize_any(output, static_cast<uint8_t>(to_send.payload_length_));
     if (to_send.payload_length_ > 0) {
       output.write((stream_byte_type*)to_send.payload_buffer_,

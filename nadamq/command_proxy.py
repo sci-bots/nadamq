@@ -136,7 +136,9 @@ class CommandRequestManagerDebug(CommandRequestManagerBase):
         print ' - Arguments:'
         for k, v in kwargs.iteritems():
             print '  - `%s`: `%s`' % (k, v)
-        print ' - Encoded: `%s`' % [hex(ord(c)) for c in encoded_request]
+        data = np.fromstring(encoded_request, dtype=np.uint8)
+        print ' - Encoded: `%s`' % repr(data.tostring())
+        print '            `%s`' % data
         print ''
         return encoded_request
 
@@ -229,7 +231,7 @@ class NodeProxy(object):
                 #
                 # [1]: http://en.wikipedia.org/wiki/Partial_application
                 def f(**kwargs):
-                    retry_count = kwargs.pop('retry_count', 5)
+                    retry_count = kwargs.pop('retry_count', 10)
                     remote_address = kwargs.pop('remote_address', None)
                     if remote_address is not None:
                         def _remote_func(**kwargs):

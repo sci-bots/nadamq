@@ -44,6 +44,18 @@ setup(name='nadamq',
 
 
 @task
+def build_arduino_library():
+    import os
+    import tarfile
+    import nadamq
+
+    tf = tarfile.TarFile.bz2open('build/NadaMQ-Arduino.tar.gz', 'w')
+    for s in nadamq.get_arduino_library_sources():
+        tf.add(s, os.path.join('NadaMQ', os.path.basename(s)))
+    tf.close()
+
+
+@task
 def copy_packet_actions():
     path('build/packet_actions.cpp').copy('nadamq/src')
 
@@ -73,7 +85,7 @@ def bdist():
 @task
 @needs('copy_packet_actions', 'generate_setup', 'minilib', 'build_ext',
        # 'build_firmware',
-       'setuptools.command.sdist')
+       'build_arduino_library', 'setuptools.command.sdist')
 def sdist():
     """Overrides sdist to make sure that our setup.py is generated."""
     pass

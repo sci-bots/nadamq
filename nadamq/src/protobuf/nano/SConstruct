@@ -1,0 +1,5 @@
+Program('encode', ['simple.pb.c', 'encode.cpp', 'pb_encode.c'], CPPPATH=['.'])
+Program('decode_request', ['simple.pb.c', 'decode_request.cpp', 'pb_decode.c'],
+        CPPPATH=['.'])
+Program('decode_response', ['simple.pb.c', 'decode_response.cpp',
+                            'pb_decode.c'], CPPPATH=['.'])

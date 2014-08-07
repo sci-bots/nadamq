@@ -3,30 +3,16 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "crc_common.h"
 
 #ifndef AVR
-#include "crc-16.h"
-
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>
 using namespace std;
-
-#else
-
-/* AVR headers define `_crc16_update` function. */
-#include <util/crc16.h>
-
-inline uint16_t crc_init() { return 0; }
-inline void crc_finalize(...) {}
-
 #endif // ifndef AVR
 
 #include "Packet.h"
-
-
-uint16_t update_crc(uint16_t crc, uint8_t data);
-uint16_t finalize_crc(uint16_t crc);
 
 
 class Parser {
@@ -51,6 +37,7 @@ public:
 };
 
 
+template <typename Packet>
 class PacketParser : public Parser {
 public:
   typedef Parser base_type;
@@ -66,6 +53,7 @@ public:
 protected:
   int stack[4];
   int top;
+  int length_bytes_received_;
 
   using base_type::cs;
   using base_type::p;
@@ -77,7 +65,8 @@ public:
   using base_type::state;
 
   PacketParser() : base_type(), payload_bytes_expected_(0),
-                   payload_bytes_received_(0), crc_(0), packet_(NULL) {}
+                   payload_bytes_received_(0), crc_(0), packet_(NULL),
+                   length_bytes_received_(0) {}
 
   void reset();
   void reset(Packet *packet) {
@@ -106,11 +95,15 @@ public:
     }
 
     if (parse_error_) {
+      payload_bytes_expected_ = 0;
+      length_bytes_received_ = 0;
       return -1;
     } else if (message_completed_) {
       /* Trigger end-of-file actions. */
       parse_byte(NULL);
       crc_ = crc_finalize(crc_);
+      payload_bytes_expected_ = 0;
+      length_bytes_received_ = 0;
       return 1;
     } else {
       return 0;

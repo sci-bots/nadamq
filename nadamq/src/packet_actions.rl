@@ -1,3 +1,7 @@
+#ifdef ARDUINO
+#include <Arduino.h>
+#endif  // #ifdef ARDUINO
+
 %%{
 
 machine packet_grammar;
@@ -7,6 +11,11 @@ action error {
   std::cout << "[error]: " << std::hex << static_cast<int>(*p) << std::dec
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[error]: ");
+  Serial.print(static_cast<int>(*p));
+  Serial.println("");
+#endif  // #ifdef ARDUINO_DEBUG
   parse_error_ = true;
 }
 
@@ -14,6 +23,9 @@ action startflag_received {
 #ifdef VERBOSE_STATES
   std::cout << "[startflag_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.println("[startflag_received]");
+#endif  // #ifdef ARDUINO_DEBUG
   // We're starting to process a new packet, so reset completed status.
   message_completed_ = false;
 }
@@ -42,20 +54,16 @@ action type_received {
   packet_->type(*p);
 }
 
-action length_received {
-#ifdef VERBOSE_STATES
-  std::cout << "[length_received]: " << static_cast<int>(*p) << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-  payload_bytes_expected_ = *p;
-}
-
 action payload_start {
 #ifdef VERBOSE_STATES
   std::cout << "[payload_start] expected size: " << payload_bytes_expected_
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.println("[payload]");
+#endif  // #ifdef ARDUINO_DEBUG
   /* Resize the payload buffer to fit the expected payload size. */
-  packet_->reallocate_buffer(payload_bytes_expected_);
+  // packet_->reallocate_buffer(payload_bytes_expected_);
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
   crc_ = crc_init();
@@ -66,6 +74,12 @@ action payload_byte_received {
   std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[b] [");
+  Serial.print(static_cast<char>(*p));
+  Serial.print("] byte: ");
+  Serial.println(payload_bytes_received_);
+#endif  // #ifdef ARDUINO_DEBUG
   /* We received another payload octet, so:
    *
    *   - Update CRC checksum.
@@ -86,6 +100,41 @@ action payload_end {
             << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   crc_ = finalize_crc(crc_);
+}
+
+action length_start {
+#ifdef VERBOSE_STATES
+  std::cout << "[length_start]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  length_bytes_received_ = 0;
+  payload_bytes_expected_ = 0;
+}
+
+action length_byte_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[length_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  payload_bytes_expected_ <<= 8;
+  payload_bytes_expected_ += *p;
+}
+
+action length_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[length_received]: " << payload_bytes_expected_ << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[len]: ");
+  Serial.print(static_cast<int>(payload_bytes_expected_));
+  Serial.print("/");
+  Serial.println(packet_->buffer_size_);
+#endif  // #ifdef ARDUINO_DEBUG
+  if (payload_bytes_expected_ > packet_->buffer_size_) {
+#ifndef AVR
+      std::cerr << "[ERROR]: expected length is too long for buffer.  "
+                   "Buffer length is " << packet_->buffer_size_ << std::endl;
+#endif  // #ifndef AVR
+    parse_error_ = true;
+  }
 }
 
 action crc_start {
@@ -129,6 +178,21 @@ action crc_received {
   }
 }
 
+action ack_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[ack_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  message_completed_ = true;
+}
+
+action nack_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[nack_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  message_completed_ = true;
+  packet_->payload_length_ = payload_bytes_expected_;
+}
+
 action packet_err {
 #ifdef VERBOSE_STATES
   std::cout << "[packet_err]" << std::endl;
@@ -146,7 +210,8 @@ include "packet.rl";
 
 %% write data;
 
-void PacketParser::reset() {
+template <typename Packet>
+inline void PacketParser<Packet>::reset() {
   /*
    * Attempt to parse a packet from a buffer with length `buffer_len`.
    *
@@ -171,12 +236,15 @@ void PacketParser::reset() {
   crc_ = 0;
   message_completed_ = false;
   parse_error_ = false;
+  payload_bytes_received_ = 0;
+  length_bytes_received_ = 0;
 
   %% write init;
 }
 
 
-void PacketParser::parse_byte(uint8_t *byte) {
+template <typename Packet>
+inline void PacketParser<Packet>::parse_byte(uint8_t *byte) {
   uint8_t dummy_byte;
 
   if (byte == NULL) {
@@ -191,21 +259,22 @@ void PacketParser::parse_byte(uint8_t *byte) {
   }
 
   %% write exec;
+
+#ifdef ARDUINO_DEBUG
+  Serial.print("[p] (");
+  Serial.print(cs);
+  Serial.print(") ");
+  if (*byte > 20 && *byte < 128) {
+    Serial.print("'");
+    Serial.print(static_cast<char>(*byte));
+    Serial.print("'");
+  } else {
+    Serial.print(static_cast<int>(*byte));
+  }
+  Serial.println("");
+#endif  // #ifdef ARDUINO_DEBUG
 }
 
 
-uint16_t update_crc(uint16_t crc, uint8_t data) {
-#ifdef AVR
-    crc = _crc16_update(crc, data);
-#else
-    crc = crc_update_byte(crc, data);
-#endif
-    return crc;
-}
-
-uint16_t finalize_crc(uint16_t crc) {
-#ifndef AVR
-    crc = crc_finalize(crc);
-#endif
-    return crc;
-}
+template void PacketParser<FixedPacket>::reset();
+template void PacketParser<FixedPacket>::parse_byte(uint8_t *);

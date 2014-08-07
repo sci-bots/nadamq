@@ -30,13 +30,13 @@
 
     startflag = "|"{3};
     iuid = OCTET{2};
-    length = OCTET;
+    length = OCTET{2};
     payload = OCTET*;
     crc = OCTET{2};
 
-    ACK = 0x05;
-    NACK = 0x06;
-    DATA = 0x07;
+    ACK = 'a';
+    NACK = 'n';
+    DATA = 'd';
 
     # The `process_payload` state machine parses incoming bytes into the packet
     # buffer until the expected number of bytes has been read.
@@ -49,20 +49,20 @@
         start: (
             (startflag @startflag_received)
             (iuid >id_start $id_octet_received)
-            (ACK >type_received -> final |
+            (ACK >type_received @ack_received -> final |
              NACK >type_received -> ProcessingNack |
              DATA >type_received -> ProcessingData)
         ),
 
         ProcessingNack: (
-            length @length_received -> final
+            length @length_received @nack_received -> final
         ),
 
         ProcessingData: (
-            (length @length_received @{ fcall process_payload; } %payload_end)
+            (length >length_start $length_byte_received @length_received @{ fcall process_payload; } %payload_end)
             (crc >crc_start $crc_byte_received @crc_received) -> final
         )
-    ) $!error;
+    ); # $!error;
     #) ${ std::cout << "[byte_received] " << std::hex << static_cast<int>(*p) << std::dec << std::endl; } $!error;
     main := Hub* ;
 }%%

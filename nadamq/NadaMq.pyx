@@ -1,6 +1,11 @@
+#cython: embedsignature=True
 cimport cython
+from cython.view cimport array as cvarray
+from cython.operator cimport dereference as deref
 from libcpp.string cimport string
 from libc.stdint cimport uint16_t
+from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy
 
 import re
 
@@ -46,7 +51,7 @@ cdef extern from "PacketParser.h":
         PACKET_TYPE_NACK "Packet::packet_type::NACK"
         PACKET_TYPE_DATA "Packet::packet_type::DATA"
 
-    cdef cppclass Packet:
+    cdef cppclass FixedPacket:
         uint16_t iuid_
         packet_type type_
         uint16_t payload_length_
@@ -54,12 +59,13 @@ cdef extern from "PacketParser.h":
         uchar *payload_buffer_
         uint16_t crc_
 
-        Packet()
+        FixedPacket()
         string data() except +
         uchar type()
         void type(uchar command_with_type_msb)
+        void compute_crc()
 
-    cdef cppclass PacketParser:
+    cdef cppclass PacketParser "PacketParser<FixedPacket>":
         int payload_bytes_received_
         int payload_bytes_expected_
         bint message_completed_
@@ -68,7 +74,7 @@ cdef extern from "PacketParser.h":
 
         PacketParser()
         void parse_byte(uchar *byte)
-        void reset(Packet *packet)
+        void reset(FixedPacket *packet)
 
 
 cdef extern from "crc-16.h":
@@ -78,20 +84,95 @@ cdef extern from "crc-16.h":
     crc_t c_crc_update_byte "crc_update_byte" (crc_t crc, uchar data)
 
 
-cdef class cPacket:
-    cdef Packet *thisptr
+cdef extern from "<sstream>" namespace "std":
+    cdef cppclass stringstream:
+        stringstream()
+        string str_ "str" ()
 
-    def __cinit__(self):
-        self.thisptr = new Packet()
+
+cdef extern from "PacketWriter.h":
+    void write_packet(stringstream output, FixedPacket packet)
+
+
+cdef class cPacket:
+    cdef FixedPacket *thisptr
+    cdef unsigned char *buffer_
+
+    def __cinit__(self, type_=PACKET_TYPES.NONE, iuid=0, data=None,
+                  buffer_=None, buffer_size=None):
+        self.thisptr = new FixedPacket()
+        if data is not None:
+            if buffer_ is not None:
+                # Caller supplied a buffer, so check to make sure that the
+                # length of the buffer is long enough to hold `data`.
+                if len(buffer_) < len(data):
+                    raise ValueError('Supplied buffer is not long enough to '
+                                     'hold `data`, %d < %d' % (len(buffer_),
+                                                               len(data)))
+                elif buffer_size is not None:
+                    raise ValueError('Buffer size must not be specified when a'
+                                     ' buffer is supplied, since the size is '
+                                     'implied by the size of the provided '
+                                     'buffer.')
+                else:
+                    self.set_buffer(buffer_)
+            elif buffer_size is None:
+                # Data was provided, but no buffer size was specified.  Use length
+                # of `data` as implied buffer size.
+                buffer_size = len(data)
+        if buffer_size is not None and buffer_size > 0:
+            self.alloc_buffer(buffer_size)
+        else:
+            self.buffer_ = NULL
+        self.iuid = iuid
+        self.type_ = type_
+        if data is not None:
+            self.set_data(data)
+
+    property max_buffer_size:
+        def __get__(self):
+            return (1 << (sizeof(self.thisptr.buffer_size_) << 3)) - 1
+
+    def set_data(self, string data):
+        '''
+        Write the provided data to the buffer.
+
+        Notes
+        =====
+
+         - The packet must already have a buffer of sufficient size.
+         - This method updates the length of the payload, but does not modify
+          the size of the buffer.
+         - This method updates the CRC checksum of the packet, based on the new
+          payload contents.
+        '''
+        if data.size() > self.thisptr.buffer_size_:
+            raise ValueError('Data length is too large for buffer, %s > %s' %
+                             (data.size(), self.thisptr.buffer_size_))
+        memcpy(self.thisptr.payload_buffer_, data.c_str(), data.size())
+        self.thisptr.payload_length_ = data.size()
+        self.thisptr.compute_crc()
 
     def data(self):
+        '''
+        Return the payload of the packet as a byte string.
+        '''
         return self.thisptr.data()
 
-    def __dealloc__(self):
-        del self.thisptr
-
     def data_ptr(self):
+        '''
+        Return the pointer to the payload buffer.
+        '''
         return <size_t>self.thisptr.payload_buffer_
+
+    def tostring(self):
+        '''
+        Serialize packet according to format defined in the `write_packet` C++
+        function.
+        '''
+        cdef stringstream output
+        write_packet(output, deref(self.thisptr))
+        return output.str_()
 
     property crc:
         def __get__(self):
@@ -109,28 +190,94 @@ cdef class cPacket:
         def __set__(self, value):
             self.thisptr.iuid_ = value
 
+    property buffer_size:
+        def __get__(self):
+            return self.thisptr.buffer_size_
+
+    def clear_buffer(self):
+        '''
+        Deallocate buffer (if it has been allocated).
+        '''
+        if self.buffer_ != NULL:
+            free(self.buffer_)
+            self.buffer_ = NULL
+
+    def realloc_buffer(self, buffer_size):
+        '''
+        Allocate the specified buffer size, deallocating the existing buffer,
+        if one has been allocated.
+        '''
+        if buffer_size > self.max_buffer_size:
+            raise RuntimeError('Max buffer size is %d' % self.max_buffer_size)
+        self.clear_buffer()
+        self.alloc_buffer(buffer_size)
+
+    def alloc_buffer(self, buffer_size):
+        '''
+        Allocate the specified buffer size.
+        '''
+        if self.buffer_ != NULL:
+            raise RuntimeError('Buffer has already been allocated.')
+        if buffer_size > self.max_buffer_size:
+            raise RuntimeError('Max buffer size is %d' % self.max_buffer_size)
+        self.buffer_ = <unsigned char *>malloc(buffer_size)
+        self.set_buffer(<unsigned char [:buffer_size]>self.buffer_,
+                        overwrite=True)
+        self.thisptr.buffer_size_ = buffer_size
+
+    def set_buffer(self, unsigned char [:] data, overwrite=False):
+        '''
+        Assign the specified data buffer as the payload buffer of the packet.
+        '''
+        if self.thisptr.payload_buffer_ != NULL and not overwrite:
+            raise RuntimeError('Packet already has a payload buffer '
+                               'allocated.  Must use `overwrite=True` to set '
+                               'buffer anyway.')
+        self.thisptr.payload_buffer_ = &data[0]
+        self.thisptr.buffer_size_ = len(data)
+        self.thisptr.payload_length_ = 0
+
+    def __dealloc__(self):
+        del self.thisptr
+        self.clear_buffer()
+
+    def __str__(self):
+        return self.tostring()
+
 
 cdef class cPacketParser:
     cdef PacketParser *thisptr
+    cdef object packet
 
-    def __cinit__(self):
+    def __cinit__(self, buffer_size=8 << 10):
         self.thisptr = new PacketParser()
+        self.packet = cPacket(buffer_size=buffer_size)
+        self.reset()
 
     def __dealloc__(self):
         del self.thisptr
 
+    def reset(self):
+        self.thisptr.reset((<cPacket>self.packet).thisptr)
+
     def parse(self, uchar [:] packet_buffer):
-        packet = cPacket()
-        self.thisptr.reset(packet.thisptr)
         cdef int i
         for i in xrange(len(packet_buffer)):
             self.thisptr.parse_byte(<uchar *>&packet_buffer[i])
-            error = self.thisptr.parse_error_
-            if error:
-                self.thisptr.reset(packet.thisptr)
-                raise RuntimeError, ('Error parsing packet: %s' %
-                                     np.asarray(packet_buffer).tostring())
-        return packet
+            if self.error:
+                raise RuntimeError, ('Error parsing packet [byte=%d]: %s' %
+                                     (i, np.asarray(packet_buffer).tostring()))
+            elif self.message_completed:
+                return self.packet
+        return False
+
+    property message_completed:
+        def __get__(self):
+            return self.thisptr.message_completed_
+
+    property error:
+        def __get__(self):
+            return self.thisptr.parse_error_
 
     property crc:
         def __get__(self):
@@ -164,31 +311,9 @@ def byte_pair(value):
     return (chr((value >> 8) & 0x0FF), chr(value & 0x0FF))
 
 
-def create_ack_packet_bytes(interface_unique_id):
-    iuid = byte_pair(interface_unique_id)
-
-    packet_str = '%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.ACK))
-
-    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
-
-
-def create_nack_packet_bytes(interface_unique_id, max_packet_length=0):
-    iuid = byte_pair(interface_unique_id)
-    packet_str = '%s%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.NACK),
-                               chr(max_packet_length))
-
-    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
-
-
-def create_data_packet_bytes(interface_unique_id, payload):
-    iuid = byte_pair(interface_unique_id)
-
-    crc = compute_crc16(payload)
-    packet_str = '%s%s%s%s%s%s%s' % (iuid[0], iuid[1], chr(PACKET_TYPES.DATA),
-                                     chr(len(payload)), payload,
-                                     chr((crc >> 8) & 0x0FF), chr(crc & 0x0FF))
-
-    return np.fromstring(FLAGS.START + packet_str, dtype='uint8')
+def parse_from_string(packet_str):
+    parser = cPacketParser()
+    return parser.parse(np.array([ord(v) for v in packet_str], dtype='uint8'))
 
 
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',

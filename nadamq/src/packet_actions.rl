@@ -54,26 +54,6 @@ action type_received {
   packet_->type(*p);
 }
 
-action length_received {
-#ifdef VERBOSE_STATES
-  std::cout << "[length_received]: " << static_cast<int>(*p) << std::endl;
-#endif  // #ifdef VERBOSE_STATES
-#ifdef ARDUINO_DEBUG
-  Serial.print("[len]: ");
-  Serial.print(static_cast<int>(*p));
-  Serial.print("/");
-  Serial.println(packet_->buffer_size_);
-#endif  // #ifdef ARDUINO_DEBUG
-  payload_bytes_expected_ = *p;
-  if (payload_bytes_expected_ > packet_->buffer_size_) {
-#ifndef AVR
-      std::cerr << "[ERROR]: expected length is too long for buffer.  "
-                   "Buffer length is " << packet_->buffer_size_ << std::endl;
-#endif  // #ifndef AVR
-    parse_error_ = true;
-  }
-}
-
 action payload_start {
 #ifdef VERBOSE_STATES
   std::cout << "[payload_start] expected size: " << payload_bytes_expected_
@@ -120,6 +100,41 @@ action payload_end {
             << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   crc_ = finalize_crc(crc_);
+}
+
+action length_start {
+#ifdef VERBOSE_STATES
+  std::cout << "[length_start]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  length_bytes_received_ = 0;
+  payload_bytes_expected_ = 0;
+}
+
+action length_byte_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[length_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  payload_bytes_expected_ <<= 8;
+  payload_bytes_expected_ += *p;
+}
+
+action length_received {
+#ifdef VERBOSE_STATES
+  std::cout << "[length_received]: " << payload_bytes_expected_ << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+#ifdef ARDUINO_DEBUG
+  Serial.print("[len]: ");
+  Serial.print(static_cast<int>(payload_bytes_expected_));
+  Serial.print("/");
+  Serial.println(packet_->buffer_size_);
+#endif  // #ifdef ARDUINO_DEBUG
+  if (payload_bytes_expected_ > packet_->buffer_size_) {
+#ifndef AVR
+      std::cerr << "[ERROR]: expected length is too long for buffer.  "
+                   "Buffer length is " << packet_->buffer_size_ << std::endl;
+#endif  // #ifndef AVR
+    parse_error_ = true;
+  }
 }
 
 action crc_start {
@@ -221,6 +236,8 @@ inline void PacketParser<Packet>::reset() {
   crc_ = 0;
   message_completed_ = false;
   parse_error_ = false;
+  payload_bytes_received_ = 0;
+  length_bytes_received_ = 0;
 
   %% write init;
 }

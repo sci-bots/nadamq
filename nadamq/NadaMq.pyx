@@ -249,7 +249,7 @@ cdef class cPacketParser:
     cdef PacketParser *thisptr
     cdef object packet
 
-    def __cinit__(self, buffer_size=1024):
+    def __cinit__(self, buffer_size=8 << 10):
         self.thisptr = new PacketParser()
         self.packet = cPacket(buffer_size=buffer_size)
         self.reset()

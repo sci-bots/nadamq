@@ -30,7 +30,7 @@
 
     startflag = "|"{3};
     iuid = OCTET{2};
-    length = OCTET;
+    length = OCTET{2};
     payload = OCTET*;
     crc = OCTET{2};
 
@@ -59,7 +59,7 @@
         ),
 
         ProcessingData: (
-            (length @length_received @{ fcall process_payload; } %payload_end)
+            (length >length_start $length_byte_received @length_received @{ fcall process_payload; } %payload_end)
             (crc >crc_start $crc_byte_received @crc_received) -> final
         )
     ); # $!error;

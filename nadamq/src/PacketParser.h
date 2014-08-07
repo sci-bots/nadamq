@@ -53,6 +53,7 @@ public:
 protected:
   int stack[4];
   int top;
+  int length_bytes_received_;
 
   using base_type::cs;
   using base_type::p;
@@ -64,7 +65,8 @@ public:
   using base_type::state;
 
   PacketParser() : base_type(), payload_bytes_expected_(0),
-                   payload_bytes_received_(0), crc_(0), packet_(NULL) {}
+                   payload_bytes_received_(0), crc_(0), packet_(NULL),
+                   length_bytes_received_(0) {}
 
   void reset();
   void reset(Packet *packet) {
@@ -93,11 +95,15 @@ public:
     }
 
     if (parse_error_) {
+      payload_bytes_expected_ = 0;
+      length_bytes_received_ = 0;
       return -1;
     } else if (message_completed_) {
       /* Trigger end-of-file actions. */
       parse_byte(NULL);
       crc_ = crc_finalize(crc_);
+      payload_bytes_expected_ = 0;
+      length_bytes_received_ = 0;
       return 1;
     } else {
       return 0;

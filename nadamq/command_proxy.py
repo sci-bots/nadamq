@@ -1,3 +1,4 @@
+from pprint import pprint
 from datetime import datetime
 import re
 from pprint import pformat
@@ -202,10 +203,48 @@ class NodeProxy(object):
         If `count` is `None`, read as many bytes as are currently available.
       - `write(data)`: Write the specified data to the stream.
     '''
-    def __init__(self, command_request_manager, stream):
+    def __init__(self, command_request_manager, stream, timeout=None):
+        timeout = 1.5 if timeout is None else timeout
+        self._timeout = timeout
         self._stream = stream
         self._command_request_manager = command_request_manager
+        self._initialize_methods()
 
+    def _do_request(self, name):
+        # Note that we need to use [partial function application][1]
+        # here so we can encapsulate the current value of
+        # `command_name` from this loop iteration when calling the
+        # associated generated method outside of this loop.  If we
+        # _don't_ create the `f` function below, the `name` variable
+        # would refer to the last `command_name` value visited by the
+        # loop in all methods, which is _not_ the behaviour we want.
+        #
+        # [1]: http://en.wikipedia.org/wiki/Partial_application
+        def f(**kwargs):
+            retry_count = kwargs.pop('retry_count', 10)
+            remote_address = kwargs.pop('remote_address', None)
+            if remote_address is not None:
+                def _remote_func(**kwargs):
+                    request = self._command_request_manager.request(name,
+                                                                    **kwargs)
+                    return (getattr(self, 'forward_i2c_request')
+                            (address=remote_address, request=request))
+                command_func = _remote_func
+            else:
+                command_func = (lambda **kwargs:
+                                self._do_request_from_command_name(
+                                    name, **kwargs))
+            for i in xrange(retry_count):
+                try:
+                    return command_func(**kwargs)
+                except ValueError, exception:
+                    exception_str = str(exception)
+                    if not exception_str.startswith('Timeout'):
+                        raise
+            raise exception
+        return f
+
+    def _initialize_methods(self):
         # Add method for each type of request discovered from `requests`
         # module.
         #
@@ -220,42 +259,8 @@ class NodeProxy(object):
         #
         # where the `kwargs` will be passed along to the corresponding command.
         for command_name in self._command_request_manager.command_names:
-            def _do_request(self, name):
-                # Note that we need to use [partial function application][1]
-                # here so we can encapsulate the current value of
-                # `command_name` from this loop iteration when calling the
-                # associated generated method outside of this loop.  If we
-                # _don't_ create the `f` function below, the `name` variable
-                # would refer to the last `command_name` value visited by the
-                # loop in all methods, which is _not_ the behaviour we want.
-                #
-                # [1]: http://en.wikipedia.org/wiki/Partial_application
-                def f(**kwargs):
-                    retry_count = kwargs.pop('retry_count', 10)
-                    remote_address = kwargs.pop('remote_address', None)
-                    if remote_address is not None:
-                        def _remote_func(**kwargs):
-                            request = (self._command_request_manager
-                                       .request(name, **kwargs))
-                            return (getattr(self, 'forward_i2c_request')
-                                    (address=remote_address,
-                                     request=request))
-                        command_func = _remote_func
-                    else:
-                        command_func = (lambda **kwargs:
-                                        self._do_request_from_command_name(
-                                            name, **kwargs))
-                    for i in xrange(retry_count):
-                        try:
-                            return command_func(**kwargs)
-                        except ValueError, exception:
-                            exception_str = str(exception)
-                            if not exception_str.startswith('Timeout'):
-                                raise
-                    raise exception
-                return f
             method_name = camelcase_to_underscore(command_name)
-            setattr(self, method_name, _do_request(self, command_name))
+            setattr(self, method_name, self._do_request(command_name))
 
     def _do_request_from_command_name(self, command_name, iuid=0, **kwargs):
         request = self._command_request_manager.request(command_name, **kwargs)
@@ -275,7 +280,7 @@ class NodeProxy(object):
                 data = np.array([ord(v) for v in self._stream.read()],
                                 dtype='uint8')
                 result = parser.parse(data)
-                if (datetime.now() - start).total_seconds() > .5:
+                if (datetime.now() - start).total_seconds() > self._timeout:
                     raise ValueError('Timeout while waiting for packet.\n"%s"'
                                      % (pformat(data.tostring())))
                 if not result:
@@ -288,8 +293,14 @@ class NodeProxy(object):
             raise ValueError('Error parsing response packet.\n"%s"' %
                              (pformat(data.tostring())))
         if response_packet.type_ == PACKET_TYPES.DATA:
-            return (self._command_request_manager
-                    .response(response_packet.data()))
+            if command_name == 'ForwardI2cRequest':
+                # This was a forwarded request, so we must return the undecoded
+                # response data, since decoding is the responsibility of the
+                # calling code.
+                return response_packet.data()
+            else:
+                return (self._command_request_manager
+                        .response(response_packet.data()))
         else:
             raise ValueError('Invalid response. (%s).\n"%s"' %
                              (response_packet.type_, pformat(data)))
@@ -360,3 +371,68 @@ class SerialStream(object):
 
     def write(self, data):
         self._serial.write(data)
+
+
+class RemoteNodeProxy(object):
+    '''
+    By default, this class forwards all method calls through a connected device
+    '''
+
+    def __init__(self, forward_proxy, remote_address, command_request_manager):
+        self._forward_proxy = forward_proxy
+        self._remote_address = remote_address
+        self._command_request_manager = command_request_manager
+        self._initialize_methods()
+
+    def _initialize_methods(self):
+        # Add method for each type of request discovered from `requests`
+        # module.
+        #
+        # For instance, for the following list of command names:
+        #
+        #     ['MyCommandA', 'MyCommandB']
+        #
+        # the following methods will be created:
+        #
+        #  - `my_command_a(**kwargs)`
+        #  - `my_command_b(**kwargs)`
+        #
+        # where the `kwargs` will be passed along to the corresponding command.
+        for command_name in self._command_request_manager.command_names:
+            method_name = camelcase_to_underscore(command_name)
+            setattr(self, method_name, self._do_request(command_name))
+
+    def _do_request(self, name):
+        # Note that we need to use [partial function application][1]
+        # here so we can encapsulate the current value of
+        # `command_name` from this loop iteration when calling the
+        # associated generated method outside of this loop.  If we
+        # _don't_ create the `f` function below, the `name` variable
+        # would refer to the last `command_name` value visited by the
+        # loop in all methods, which is _not_ the behaviour we want.
+        #
+        # [1]: http://en.wikipedia.org/wiki/Partial_application
+        def f(**kwargs):
+            retry_count = kwargs.pop('retry_count', 10)
+
+            def _remote_func(**kwargs):
+                request = self._command_request_manager.request(name,
+                                                                **kwargs)
+                # Responses from `forward_i2c_request` requests are raw byte
+                # streams.  It is our responsibility, as the source of a
+                # `forward_i2c_request` request, to decode the raw response
+                # bytes, since the forwarder may not provide the same API.
+                return self._command_request_manager.response(
+                    self._forward_proxy
+                    .forward_i2c_request(address=self._remote_address,
+                                         request=request))
+            command_func = _remote_func
+            for i in xrange(retry_count):
+                try:
+                    return command_func(**kwargs)
+                except ValueError, exception:
+                    exception_str = str(exception)
+                    if not exception_str.startswith('Timeout'):
+                        raise
+            raise exception
+        return f

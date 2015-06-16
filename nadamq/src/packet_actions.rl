@@ -58,6 +58,7 @@ action payload_start {
 #ifdef VERBOSE_STATES
   std::cout << "[payload_start] expected size: " << payload_bytes_expected_
             << std::endl;
+  std::cout << "[payload_start]: " << static_cast<int>(*p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
 #ifdef ARDUINO_DEBUG
   Serial.println("[payload]");
@@ -67,6 +68,16 @@ action payload_start {
   // Reset received-bytes counter.
   payload_bytes_received_ = 0;
   crc_ = crc_init();
+  if (payload_bytes_expected_ == 0) {
+    /* No payload, so we're done. */
+
+    /* Do not advance character pointer, since the character is *not* part of
+     * the payload. */
+    fhold;
+
+    /* Return from the payload processing task. */
+    fret;
+  }
 }
 
 action payload_byte_received {

@@ -3,36 +3,36 @@ Import('env')
 socket_fsm_src = Command('packet_socket_fsm_actions.cpp',
                          'packet_socket_fsm_actions.rl',
                          'ragel -G2 -o $TARGET $SOURCE')
-socket_fsm_dot = Command('packet_socket_fsm.dot', 'packet_socket_fsm_actions.rl',
-                         'ragel -V -p -o $TARGET $SOURCE')
-socket_fsm_pdf = Command('packet_socket_fsm.pdf', socket_fsm_dot,
-                         'dot -Tpdf -o $TARGET $SOURCE')
+#socket_fsm_dot = Command('packet_socket_fsm.dot', 'packet_socket_fsm_actions.rl',
+                         #'ragel -V -p -o $TARGET $SOURCE')
+#socket_fsm_pdf = Command('packet_socket_fsm.pdf', socket_fsm_dot,
+                         #'dot -Tpdf -o $TARGET $SOURCE')
 
 Depends(socket_fsm_src, 'packet_socket_fsm.rl')
-Depends(socket_fsm_dot, 'packet_socket_fsm.rl')
-Depends(socket_fsm_pdf, 'packet_socket_fsm.rl')
+#Depends(socket_fsm_dot, 'packet_socket_fsm.rl')
+#Depends(socket_fsm_pdf, 'packet_socket_fsm.rl')
 
 packet_actions_src = Command('packet_actions.cpp', 'packet_actions.rl',
                              'ragel -G2 -o $TARGET $SOURCE')
-packet_dot = Command('packet_actions.dot', 'packet_actions.rl',
-                     'ragel -V -o $TARGET $SOURCE')
-packet_pdf = Command('packet_actions.pdf', packet_dot,
-                     'dot -Tpdf -o $TARGET $SOURCE')
+#packet_dot = Command('packet_actions.dot', 'packet_actions.rl',
+                     #'ragel -V -o $TARGET $SOURCE')
+#packet_pdf = Command('packet_actions.pdf', packet_dot,
+                     #'dot -Tpdf -o $TARGET $SOURCE')
 
 Depends(packet_actions_src, 'packet.rl')
-Depends(packet_dot, 'packet.rl')
-Depends(packet_pdf, 'packet.rl')
+#Depends(packet_dot, 'packet.rl')
+#Depends(packet_pdf, 'packet.rl')
 
-crc_objs = env.Object(['crc-16.c', 'crc_common.cpp'])
+crc_objs = env.Object(['crc_common.cpp'])
 packet_actions = env.Object([packet_actions_src])
                         #CPPDEFINES=['VERBOSE_STATES'])
-env.Program(['tests/test_packet_parser.cpp', packet_actions, crc_objs],
-            CCFLAGS=['-g', '-O0'])
-env.Program(['tests/test_packet_socket.cpp', socket_fsm_src, packet_actions,
-             crc_objs], CCFLAGS=['-g', '-O0'])
-env.Program(['tests/test_circular_buffer.cpp'], CCFLAGS=['-g', '-O0'])
-env.Program(['tests/test_deque.cpp'], CCFLAGS=['-g', '-O0'])
-env.Program(['tests/test_buffer_allocator.cpp'], CCFLAGS=['-g', '-O0'])
-env.Program(['tests/test_packet_stream.cpp', packet_actions, crc_objs],
-            CCFLAGS=['-g', '-O0'])
-env.Program(['tests/test_packet_writer.cpp', crc_objs], CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_packet_parser.cpp', packet_actions, crc_objs],
+#             CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_packet_socket.cpp', socket_fsm_src, packet_actions,
+#              crc_objs], CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_circular_buffer.cpp'], CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_deque.cpp'], CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_buffer_allocator.cpp'], CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_packet_stream.cpp', packet_actions, crc_objs],
+#             CCFLAGS=['-g', '-O0'])
+# env.Program(['tests/test_packet_writer.cpp', crc_objs], CCFLAGS=['-g', '-O0'])

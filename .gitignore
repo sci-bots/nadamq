@@ -11,5 +11,7 @@ nadamq/NadaMq.cpp
 nadamq/NadaMq.pyd
 nadamq/src/packet_actions.cpp
 *~
+*.*~
 paver-minilib.zip
 setup.py
+*.pyc

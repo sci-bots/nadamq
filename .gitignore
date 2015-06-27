@@ -1,5 +1,15 @@
+*.egg-info/*
 *.o
 *.pyc
 RELEASE-VERSION
 MANIFEST
 .sconsign.dblite
+build/*
+dist/*
+dist/*
+nadamq/NadaMq.cpp
+nadamq/NadaMq.pyd
+nadamq/src/packet_actions.cpp
+*~
+paver-minilib.zip
+setup.py

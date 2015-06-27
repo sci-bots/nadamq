@@ -47,7 +47,6 @@ setup(name='nadamq',
 def build_arduino_library():
     import os
     import tarfile
-    import nadamq
 
     tf = tarfile.TarFile.bz2open('build/NadaMQ-Arduino.tar.gz', 'w')
     for s in nadamq.get_arduino_library_sources():

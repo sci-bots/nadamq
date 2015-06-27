@@ -2,3 +2,4 @@ include RELEASE-VERSION
 include version.py
 include setup.py
 include paver-minilib.zip
+recursive-include nadamq *.pyx *.pxd *.h *.c src/packet_actions.cpp

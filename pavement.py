@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 from pprint import pprint
 
 from paver.easy import task, needs, path, sh, cmdopts, options
-from paver.setuputils import setup, find_package_data, install_distutils_tasks
+from paver.setuputils import setup, install_distutils_tasks
 from distutils.extension import Extension
 from distutils.dep_util import newer
 
@@ -39,7 +39,6 @@ setup(name='nadamq',
       url='https://github.com/cfobel/nadamq',
       license='GPL',
       packages=['nadamq', ],
-      package_data={'nadamq': ['*.p??', 'src/*.h', 'src/*.c*']},
       ext_modules=extensions)
 
 

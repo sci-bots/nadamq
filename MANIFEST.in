@@ -3,6 +3,7 @@ include version.py
 include setup.py
 include paver-minilib.zip
 recursive-include nadamq src/packet_actions.cpp
+recursive-include nadamq lib/*
 recursive-include nadamq *.pyx
 recursive-include nadamq *.pxd
 recursive-include nadamq *.h

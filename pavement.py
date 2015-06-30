@@ -35,9 +35,12 @@ setup(name='nadamq',
       description='Embedded-friendly transport layer, inspired by ZeroMQ',
       keywords='cython embedded zeromq transport packet parse',
       author='Christian Fobel',
+      author_email='christian@fobel.net',
       url='https://github.com/cfobel/nadamq',
       license='GPL',
       packages=['nadamq', ],
+      # Install data listed in `MANIFEST.in`
+      include_package_data=True,
       ext_modules=extensions)
 
 
@@ -46,7 +49,11 @@ def build_arduino_library():
     import os
     import tarfile
 
-    tf = tarfile.TarFile.bz2open('build/NadaMQ-Arduino.tar.gz', 'w')
+    arduino_lib_dir = path('nadamq').joinpath('lib')
+    if not arduino_lib_dir.isdir():
+        arduino_lib_dir.mkdir()
+    tf = tarfile.TarFile.bz2open(arduino_lib_dir
+                                 .joinpath('NadaMQ-Arduino.tar.gz'), 'w')
     for s in nadamq.get_arduino_library_sources():
         tf.add(s, os.path.join('NadaMQ', os.path.basename(s)))
     tf.close()

@@ -118,8 +118,9 @@ cdef class cPacket:
                     self.set_buffer(buffer_)
             elif buffer_size is None:
                 # Data was provided, but no buffer size was specified.  Use length
-                # of `data` as implied buffer size.
-                buffer_size = len(data)
+                # of `data` as implied buffer size, or length of one if `data`
+                # has a length of zero.
+                buffer_size = max(len(data), 1)
         if buffer_size is not None and buffer_size > 0:
             self.alloc_buffer(buffer_size)
         else:

@@ -7,11 +7,10 @@ from paver.setuputils import setup, install_distutils_tasks
 from distutils.extension import Extension
 from distutils.dep_util import newer
 
-import version
 # Add package directory to Python path. This enables the use of `nadamq`
 # functions for discovering, e.g., the path to the Arduino firmware sketch
 # source files.
-sys.path.append(path('.').abspath())
+sys.path.insert(0, path('.').abspath())
 import nadamq
 import version
 

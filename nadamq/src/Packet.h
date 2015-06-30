@@ -13,6 +13,7 @@ using namespace std;
 #include <stdint.h>
 #include <stdlib.h>
 #include "crc_common.h"
+#include "Array.h"
 
 
 class PacketBase {
@@ -29,6 +30,24 @@ public:
 
   PacketBase() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
                  buffer_size_(0), payload_buffer_(NULL), crc_(0xFFFF) {}
+  PacketBase(UInt8Array buffer)
+    : iuid_(0), type_(packet_type::NONE), payload_length_(0),
+      buffer_size_(buffer.length), payload_buffer_(buffer.data),
+      crc_(0xFFFF) {}
+
+  UInt8Array buffer() {
+    UInt8Array result;
+    result.data = payload_buffer_;
+    result.length = buffer_size_;
+    return result;
+  }
+
+  UInt8Array payload() {
+    UInt8Array result;
+    result.data = payload_buffer_;
+    result.length = payload_length_;
+    return result;
+  }
 
   template <typename ConvertibleType>
   void type(ConvertibleType type_byte) {
@@ -96,6 +115,18 @@ class FixedPacket : public PacketBase {
    * This packet type is useful, e.g., with the `PacketAllocator`, which
    * creates packets, allocating a new payload buffer for each packet. */
 public:
+  FixedPacket() : PacketBase() {}
+
+  FixedPacket(uint16_t buffer_size, uint8_t *buffer)
+    : PacketBase() {
+    reset_buffer(buffer_size, buffer);
+  }
+
+  void reset_buffer(UInt8Array buffer) {
+    buffer_size_ = buffer.length;
+    payload_buffer_ = buffer.data;
+  }
+
   void reset_buffer(uint16_t buffer_size, uint8_t *buffer) {
     /* Assign a new payload buffer _(may be empty)_. */
     buffer_size_ = buffer_size;

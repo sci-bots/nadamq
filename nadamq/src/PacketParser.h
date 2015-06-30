@@ -67,6 +67,11 @@ public:
   PacketParser() : base_type(), payload_bytes_expected_(0),
                    payload_bytes_received_(0), crc_(0), packet_(NULL),
                    length_bytes_received_(0) {}
+  PacketParser(Packet *packet)
+    : base_type(), payload_bytes_expected_(0), payload_bytes_received_(0),
+      crc_(0), packet_(NULL), length_bytes_received_(0) {
+    reset(packet);
+  }
 
   void reset();
   void reset(Packet *packet) {

@@ -13,7 +13,9 @@ using namespace std;
 #include <stdint.h>
 #include <stdlib.h>
 #include "crc_common.h"
+#ifdef AVR
 #include "Array.h"
+#endif  // #ifdef AVR
 
 
 class PacketBase {
@@ -30,6 +32,7 @@ public:
 
   PacketBase() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
                  buffer_size_(0), payload_buffer_(NULL), crc_(0xFFFF) {}
+#ifdef AVR
   PacketBase(UInt8Array buffer)
     : iuid_(0), type_(packet_type::NONE), payload_length_(0),
       buffer_size_(buffer.length), payload_buffer_(buffer.data),
@@ -48,6 +51,7 @@ public:
     result.length = payload_length_;
     return result;
   }
+#endif  // #ifdef AVR
 
   template <typename ConvertibleType>
   void type(ConvertibleType type_byte) {
@@ -122,10 +126,12 @@ public:
     reset_buffer(buffer_size, buffer);
   }
 
+#ifdef AVR
   void reset_buffer(UInt8Array buffer) {
     buffer_size_ = buffer.length;
     payload_buffer_ = buffer.data;
   }
+#endif  // #ifdef AVR
 
   void reset_buffer(uint16_t buffer_size, uint8_t *buffer) {
     /* Assign a new payload buffer _(may be empty)_. */

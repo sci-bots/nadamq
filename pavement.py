@@ -14,7 +14,9 @@ sys.path.insert(0, path('.').abspath())
 import nadamq
 import version
 
-include_dirs = nadamq.get_includes()
+here = path('.').abspath()
+include_dirs = [str(here.relpathto(p)) for p in nadamq.get_includes()]
+sources = [str(here.relpathto(p)) for p in nadamq.get_sources()]
 sys.path += include_dirs
 
 # Add the following to `extra_compile_args` to debug packet parser:
@@ -23,10 +25,9 @@ sys.path += include_dirs
 cy_config = dict(include_dirs=include_dirs, language='c++',
                  extra_compile_args=['-O3', '-Wfatal-errors'])
 
-print '[nadamq] sources: %s' % nadamq.get_sources()
-cy_exts = [Extension('nadamq.%s' % v, nadamq.get_sources()
-                     + ['nadamq/%s.pyx' % v], **cy_config)
-           for v in ('NadaMq', )]
+print '[nadamq] sources: %s' % sources
+cy_exts = [Extension('nadamq.%s' % v, sources + ['nadamq/%s.pyx' % v],
+                     **cy_config) for v in ('NadaMq', )]
 extensions = cythonize(cy_exts)
 pprint(extensions)
 

@@ -85,7 +85,7 @@ public:
   uint16_t compute_crc() {
     /* Compute the CRC of the packet payload. */
     crc_ = crc_init();
-    for (int i = 0; i < payload_length_; i++) {
+    for (uint16_t i = 0; i < payload_length_; i++) {
       crc_ = update_crc(crc_, payload_buffer_[i]);
     }
     crc_ = finalize_crc(crc_);

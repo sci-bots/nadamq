@@ -20,7 +20,9 @@ using namespace std;
 
 class PacketBase {
 public:
-  struct packet_type { enum EnumType {NONE, ACK='a', NACK='n', DATA='d'}; };
+  struct packet_type {
+    enum EnumType {NONE, ACK='a', NACK='n', DATA='d', STREAM='s'};
+  };
 
   /* Interface unique identifier. */
   uint16_t iuid_;

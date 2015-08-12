@@ -37,6 +37,7 @@
     ACK = 'a';
     NACK = 'n';
     DATA = 'd';
+    STREAM = 's';
 
     # The `process_payload` state machine parses incoming bytes into the packet
     # buffer until the expected number of bytes has been read.
@@ -51,6 +52,7 @@
             (iuid >id_start $id_octet_received)
             (ACK >type_received @ack_received -> final |
              NACK >type_received -> ProcessingNack |
+             STREAM >type_received -> ProcessingData |
              DATA >type_received -> ProcessingData)
         ),
 

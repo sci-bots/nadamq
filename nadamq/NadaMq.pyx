@@ -32,12 +32,14 @@ cdef class _PacketTypes:
         readonly int ACK
         readonly int NACK
         readonly int DATA
+        readonly int STREAM
 
     def __cinit__(self):
         self.NONE = PACKET_TYPE_NONE
         self.ACK = PACKET_TYPE_ACK
         self.NACK = PACKET_TYPE_NACK
         self.DATA = PACKET_TYPE_DATA
+        self.STREAM = PACKET_TYPE_STREAM
 
 
 PACKET_TYPES = _PacketTypes()
@@ -50,6 +52,7 @@ cdef extern from "PacketParser.h":
         PACKET_TYPE_ACK "Packet::packet_type::ACK"
         PACKET_TYPE_NACK "Packet::packet_type::NACK"
         PACKET_TYPE_DATA "Packet::packet_type::DATA"
+        PACKET_TYPE_STREAM "Packet::packet_type::STREAM"
 
     cdef cppclass FixedPacket:
         uint16_t iuid_
@@ -320,4 +323,5 @@ def parse_from_string(packet_str):
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
                        PACKET_TYPE_ACK: 'ACK',
                        PACKET_TYPE_NACK: 'NACK',
-                       PACKET_TYPE_DATA: 'DATA'}
+                       PACKET_TYPE_DATA: 'DATA',
+                       PACKET_TYPE_STREAM: 'STREAM'}

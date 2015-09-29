@@ -1,6 +1,11 @@
 import sys
-from Cython.Build import cythonize
 from pprint import pprint
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    CYTHON_BUILD = False
+else:
+    CYTHON_BUILD = True
 
 from paver.easy import task, needs, path, sh, cmdopts, options
 from paver.setuputils import setup, install_distutils_tasks
@@ -19,16 +24,21 @@ include_dirs = [str(here.relpathto(p)) for p in nadamq.get_includes()]
 sources = [str(here.relpathto(p)) for p in nadamq.get_sources()]
 sys.path += include_dirs
 
-# Add the following to `extra_compile_args` to debug packet parser:
-#
-#     '-DVERBOSE_STATES'
-cy_config = dict(include_dirs=include_dirs, language='c++',
-                 extra_compile_args=['-O3', '-Wfatal-errors'])
+if CYTHON_BUILD:
+    # Add the following to `extra_compile_args` to debug packet parser:
+    #
+    #     '-DVERBOSE_STATES'
+    cy_config = dict(include_dirs=include_dirs, language='c++',
+                     extra_compile_args=['-O3', '-Wfatal-errors'])
 
-print '[nadamq] sources: %s' % sources
-cy_exts = [Extension('nadamq.%s' % v, sources + ['nadamq/%s.pyx' % v],
-                     **cy_config) for v in ('NadaMq', )]
-extensions = cythonize(cy_exts)
+    cy_exts = [Extension('nadamq.%s' % v, sources + ['nadamq/%s.pyx' % v],
+                         **cy_config) for v in ('NadaMq', )]
+    extensions = cythonize(cy_exts)
+else:
+    ext_config = dict(include_dirs=include_dirs,
+                      extra_compile_args=['-O3', '-Wfatal-errors'])
+    extensions = [Extension('nadamq.%s' % v, sources + ['nadamq/%s.cpp' % v],
+                            **ext_config) for v in ('NadaMq', )]
 pprint(extensions)
 
 setup(name='nadamq',

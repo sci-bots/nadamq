@@ -14,7 +14,7 @@ using namespace std;
 #include <stdlib.h>
 #include "crc_common.h"
 #ifdef AVR
-#include "Array.h"
+#include "CArrayDefs.h"
 #endif  // #ifdef AVR
 
 

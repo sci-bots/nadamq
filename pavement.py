@@ -40,6 +40,7 @@ setup(name='nadamq',
       url='https://github.com/cfobel/nadamq',
       license='GPL',
       packages=['nadamq', ],
+      install_requires=['c-array-defs'],
       # Install data listed in `MANIFEST.in`
       include_package_data=True,
       ext_modules=extensions)
@@ -61,6 +62,17 @@ def build_arduino_library():
 
 
 @task
+def build_packet_actions():
+    sh('scons')
+
+
+@task
+def clean_packet_actions():
+    sh('scons -c')
+
+
+@task
+@needs(['build_packet_actions'])
 def copy_packet_actions():
     path('build/packet_actions.cpp').copy('nadamq/src')
 

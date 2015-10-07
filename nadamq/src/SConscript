@@ -14,7 +14,7 @@ socket_fsm_src = Command('packet_socket_fsm_actions.cpp',
 Depends(socket_fsm_src, 'packet_socket_fsm.rl')
 
 packet_actions_src = Command('packet_actions.cpp', 'packet_actions.rl',
-                             'ragel -G2 -o $TARGET $SOURCE')
+                             '%s -G2 -o $TARGET $SOURCE' % ragel)
 
 Depends(packet_actions_src, 'packet.rl')
 #Depends(packet_dot, 'packet.rl')

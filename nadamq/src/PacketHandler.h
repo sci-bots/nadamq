@@ -1,7 +1,7 @@
 #ifndef ___PACKET_HANDLER__HPP___
 #define ___PACKET_HANDLER__HPP___
 
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>
@@ -77,7 +77,7 @@ public:
 };
 
 
-#ifdef AVR
+#if !defined(AVR) && !defined(__arm__)
 template <typename Parser, typename IStream, typename OStream>
 class VerbosePacketHandler : public PacketHandlerBase<Parser, IStream> {
   /* # `VerbosePacketHandler` _(`AVR`-variant, Arduino-compatible)_ #

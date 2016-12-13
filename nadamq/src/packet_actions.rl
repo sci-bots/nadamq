@@ -7,7 +7,7 @@
 machine packet_grammar;
 
 action error {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[error]: " << std::hex << static_cast<int>(*p) << std::dec
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
@@ -20,7 +20,7 @@ action error {
 }
 
 action startflag_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[startflag_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
 #ifdef ARDUINO_DEBUG
@@ -31,7 +31,7 @@ action startflag_received {
 }
 
 action id_start {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[id_start]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   /* Reset the interface unique packet identifier. */
@@ -39,7 +39,7 @@ action id_start {
 }
 
 action id_octet_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[id_octet_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   /* Shift previous contents of interface unique packet identifier 8-bits to
@@ -48,14 +48,14 @@ action id_octet_received {
 }
 
 action type_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[type_received]: " << static_cast<int>(*p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   packet_->type(*p);
 }
 
 action payload_start {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[payload_start] expected size: " << payload_bytes_expected_
             << std::endl;
   std::cout << "[payload_start]: " << static_cast<int>(*p) << std::endl;
@@ -81,7 +81,7 @@ action payload_start {
 }
 
 action payload_byte_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[payload_byte_received] byte: " << payload_bytes_received_
             << std::endl;
 #endif  // #ifdef VERBOSE_STATES
@@ -106,7 +106,7 @@ action payload_byte_received {
 }
 
 action payload_end {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[payload_end] received: " << payload_bytes_received_ << "/"
             << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
@@ -114,7 +114,7 @@ action payload_end {
 }
 
 action length_start {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[length_start]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   length_bytes_received_ = 0;
@@ -122,7 +122,7 @@ action length_start {
 }
 
 action length_byte_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[length_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   payload_bytes_expected_ <<= 8;
@@ -130,7 +130,7 @@ action length_byte_received {
 }
 
 action length_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && VERBOSE_STATES
   std::cout << "[length_received]: " << payload_bytes_expected_ << std::endl;
 #endif  // #ifdef VERBOSE_STATES
 #ifdef ARDUINO_DEBUG
@@ -140,7 +140,7 @@ action length_received {
   Serial.println(packet_->buffer_size_);
 #endif  // #ifdef ARDUINO_DEBUG
   if (payload_bytes_expected_ > packet_->buffer_size_) {
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
       std::cerr << "[ERROR]: expected length is too long for buffer.  "
                    "Buffer length is " << packet_->buffer_size_ << std::endl;
 #endif  // #ifndef AVR
@@ -149,14 +149,14 @@ action length_received {
 }
 
 action crc_start {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[crc_start]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   packet_->crc_ = 0;
 }
 
 action crc_byte_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[crc_byte_received]: " << std::hex << static_cast<int>(0x00FFFF & *p) << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   packet_->crc_ <<= 8;
@@ -164,7 +164,7 @@ action crc_byte_received {
 }
 
 action crc_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[crc_received]: "
             << "from packet: " << packet_->crc_ << ", computed: " << crc_
             << std::endl;
@@ -190,14 +190,14 @@ action crc_received {
 }
 
 action ack_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[ack_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   message_completed_ = true;
 }
 
 action nack_received {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[nack_received]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   message_completed_ = true;
@@ -205,7 +205,7 @@ action nack_received {
 }
 
 action packet_err {
-#ifdef VERBOSE_STATES
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[packet_err]" << std::endl;
 #endif  // #ifdef VERBOSE_STATES
   parse_error_ = true;

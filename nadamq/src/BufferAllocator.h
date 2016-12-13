@@ -2,7 +2,7 @@
 #define ___BUFFER_ALLOCATOR__H___
 
 #include <stdint.h>
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
 #include <iostream>
 #include <iomanip>
 #include <iterator>
@@ -93,7 +93,7 @@ public:
     }
   }
 
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
   void dump() const {
     std::cout << std::hex;
     for (int i = 0; i < Count; i++) {

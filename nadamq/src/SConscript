@@ -35,7 +35,7 @@ Import('env')
 if platform.system() == 'Windows':
     ragel = conda_prefix().joinpath('Library', 'bin', 'ragel.exe')
 else:
-    ragel = 'ragel'
+    ragel = conda_prefix().joinpath('bin', 'ragel')
 
 socket_fsm_src = Command('packet_socket_fsm_actions.cpp',
                          'packet_socket_fsm_actions.rl',

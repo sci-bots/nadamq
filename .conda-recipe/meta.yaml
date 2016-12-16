@@ -14,16 +14,17 @@ build:
 
 requirements:
   build:
-    - cython
     - c-array-defs >=0.2.post3
+    - cython
     - future
     - libpython # [win]
+    - m2-msys2-runtime # [win]
+    - mingw # [win]
     - path_helpers
     - paver
     - python
     - ragel
     - scons
-    - m2-msys2-runtime # [win]
 
   run:
     - python

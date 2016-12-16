@@ -39,7 +39,6 @@ copy nadamq\src\packet_actions.cpp "%PREFIX%"\Library\include\Arduino\NadaMQ
 
 
 REM Install source directory as Python package.
-"%PYTHON%" -c "import pdb; pdb.set_trace()"
 cd dist
 for /f %%i in ('dir /B *.tar.gz') do set DIST_FILE=%%i
 "%PYTHON%" -m pip install --no-cache %DIST_FILE%

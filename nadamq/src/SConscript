@@ -29,9 +29,6 @@ def conda_prefix():
     return conda_prefix
 
 
-Import('env')
-
-
 if platform.system() == 'Windows':
     ragel = conda_prefix().joinpath('Library', 'bin', 'ragel.exe')
 else:

@@ -47,8 +47,3 @@ packet_actions_src = Command('packet_actions.cpp', 'packet_actions.rl',
                              '%s -G2 -o $TARGET $SOURCE' % ragel)
 
 Depends(packet_actions_src, 'packet.rl')
-#Depends(packet_dot, 'packet.rl')
-#Depends(packet_pdf, 'packet.rl')
-
-crc_objs = env.Object(['crc_common.cpp'])
-packet_actions = env.Object([packet_actions_src])

@@ -142,7 +142,7 @@ public:
     reset_buffer(buffer_size, buffer);
   }
 
-#ifdef AVR
+#if defined(AVR) || defined(__arm__)
   void reset_buffer(UInt8Array buffer) {
     buffer_size_ = buffer.length;
     payload_buffer_ = buffer.data;

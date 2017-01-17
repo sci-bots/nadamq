@@ -6,7 +6,7 @@
 #include "CircularBuffer.hpp"
 #include "Deque.h"
 
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>
@@ -67,7 +67,7 @@ protected:
       return;
     }
     tx_packet_ = tx_queue_.pop_tail();
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << std::endl << "# TX packet info #" << std::endl
               << std::endl;
     std::cout << std::setw(23) << "uuid: " << tx_packet_.iuid_ << std::endl;
@@ -90,7 +90,7 @@ protected:
       return;
     }
     rx_packet_ = rx_queue_.pop_tail();
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << std::endl << "## Data packet info ##" << std::endl << std::endl;
     std::cout << std::setw(23) << "uuid: " << rx_packet_.iuid_ << std::endl;
     std::cout << std::setw(23) << "data payload: " << "'"
@@ -282,19 +282,19 @@ public:
      * is common, the allocator buffer count could be increased to avoid this
      * scenario.
      * */
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << "# `handle_no_free_packets()` #" << std::endl;
 #endif  // #ifndef AVR
   }
 
   virtual void handle_queue_full() {
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << "# `handle_queue_full()` #" << std::endl;
 #endif  // #ifndef AVR
   }
 
   virtual void queue_nack_queue_full() {
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << "# `queue_nack_queue_full()` #" << std::endl;
 #endif  // #ifndef AVR
   }
@@ -303,7 +303,7 @@ public:
     /* # `handle_packet` #
      *
      * Process a fully parsed packet. */
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << "# `handle_packet()` #" << std::endl;
 #endif  // #ifndef AVR
     /* A full packet has been parsed successfully.  Push `packet_ready` event

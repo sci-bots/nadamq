@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "crc_common.h"
 
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <iostream>

@@ -1,7 +1,21 @@
 #ifndef ___PACKET__HPP___
 #define ___PACKET__HPP___
 
-#ifndef AVR
+/*
+ * Packet format based on the following packet [ABNF][1] grammar:
+ *
+ *     packet = startflag iuid type length payload crc
+ *     startflag = 3%x7C
+ *     iuid = 2OCTET
+ *     type = OCTET
+ *     length = OCTET
+ *     payload = *OCTET
+ *     crc = 2OCTET
+ *
+ * [1]: http://en.wikipedia.org/wiki/Augmented_Backus%E2%80%93Naur_Form
+ */
+
+#if !defined(AVR) && !defined(__arm__)
 /* Assume STL libraries are not available on AVR devices, so don't include
  * methods using them when targeting AVR architectures. */
 #include <stdexcept>
@@ -13,7 +27,7 @@ using namespace std;
 #include <stdint.h>
 #include <stdlib.h>
 #include "crc_common.h"
-#ifdef AVR
+#if defined(AVR) || defined(__arm__)
 #include "CArrayDefs.h"
 #endif  // #ifdef AVR
 
@@ -34,7 +48,7 @@ public:
 
   PacketBase() : iuid_(0), type_(packet_type::NONE), payload_length_(0),
                  buffer_size_(0), payload_buffer_(NULL), crc_(0xFFFF) {}
-#ifdef AVR
+#if defined(AVR) || defined(__arm__)
   PacketBase(UInt8Array buffer)
     : iuid_(0), type_(packet_type::NONE), payload_length_(0),
       buffer_size_(buffer.length), payload_buffer_(buffer.data),
@@ -94,7 +108,7 @@ public:
     return crc_;
   }
 
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
   /*
    * Assume STL libraries are not available on AVR devices, so don't include
    * methods using them when targeting AVR architectures.
@@ -128,7 +142,7 @@ public:
     reset_buffer(buffer_size, buffer);
   }
 
-#ifdef AVR
+#if defined(AVR) || defined(__arm__)
   void reset_buffer(UInt8Array buffer) {
     buffer_size_ = buffer.length;
     payload_buffer_ = buffer.data;
@@ -196,14 +210,6 @@ public:
       buffer_size_ = 0;
     }
   }
-
-#if 0
-  ~Packet() {
-    if (buffer_owner_) {
-      deallocate_buffer();
-    }
-  }
-#endif
 
   Packet clone() const {
     Packet packet = *this;

@@ -29,14 +29,14 @@ if CYTHON_BUILD:
     #
     #     '-DVERBOSE_STATES'
     cy_config = dict(include_dirs=include_dirs, language='c++',
-                     extra_compile_args=['-O3', '-Wfatal-errors'])
+                     extra_compile_args=['-O3'])
 
     cy_exts = [Extension('nadamq.%s' % v, sources + ['nadamq/%s.pyx' % v],
                          **cy_config) for v in ('NadaMq', )]
     extensions = cythonize(cy_exts)
 else:
     ext_config = dict(include_dirs=include_dirs,
-                      extra_compile_args=['-O3', '-Wfatal-errors'])
+                      extra_compile_args=['-O3'])
     extensions = [Extension('nadamq.%s' % v, sources + ['nadamq/%s.cpp' % v],
                             **ext_config) for v in ('NadaMq', )]
 pprint(extensions)
@@ -102,16 +102,7 @@ def build_ext():
 
 
 @task
-@needs('copy_packet_actions', 'generate_setup', 'minilib',
-       'setuptools.command.bdist')
-def bdist():
-    """Overrides bdist to make sure that our setup.py is generated."""
-    pass
-
-
-@task
 @needs('copy_packet_actions', 'generate_setup', 'minilib', 'build_ext',
-       # 'build_firmware',
        'build_arduino_library', 'setuptools.command.sdist')
 def sdist():
     """Overrides sdist to make sure that our setup.py is generated."""

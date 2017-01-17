@@ -1,0 +1,35 @@
+# source will be downloaded prior to filling in jinja templates
+# Example assumes that this folder has setup.py in it
+source:
+  git_url: ../
+
+package:
+  name: nadamq
+  version: {{ GIT_DESCRIBE_TAG[1:] }}
+
+build:
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  number: {{ GIT_DESCRIBE_NUMBER }}
+
+requirements:
+  build:
+    - c-array-defs >=0.2.post3
+    - cython
+    - future
+    - libpython # [win]
+    - m2-msys2-runtime # [win]
+    - mingw # [win]
+    - path_helpers
+    - paver
+    - python
+    - ragel
+    - scons
+
+  run:
+    - python
+    - c-array-defs >=0.2.post3
+
+about:
+  home: http://github.com/wheeler-microfluidics/nadamq
+  license: MIT

@@ -2,7 +2,7 @@
 #define ___PACKET_ALLOCATOR__H___
 
 #include <stdint.h>
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
 #include <iostream>
 #include <iomanip>
 #include <iterator>
@@ -50,7 +50,7 @@ public:
     }
     /* Assign buffer to packet. */
     packet.reset_buffer(buffer_size, buffer);
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << "# `PacketAllocator::create_packet()` (" << available()
               << "/" << buffer_allocator_->buffer_count() << ") now available #"
               << std::endl << std::endl;
@@ -65,7 +65,7 @@ public:
     if (packet.payload_buffer_ != NULL) {
       buffer_allocator_->free(packet.payload_buffer_);
     }
-#ifndef AVR
+#if !defined(AVR) && !defined(__arm__)
     std::cout << "# `PacketAllocator::free_packet_buffer()` (" << available()
               << "/" << buffer_allocator_->buffer_count() << ") now available #" << std::endl
               << std::endl;

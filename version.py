@@ -120,10 +120,12 @@ def getVersion():
     except IOError:
         release_version = None
     version = readGitVersion()
-    if not version:
+    if not release_version and not version:
         raise ValueError('Cannot find the version number')
-    if version != release_version:
+    if version and version != release_version:
         writeReleaseVersion(version)
+    elif release_version:
+        writeReleaseVersion(release_version)
     return version
 
 

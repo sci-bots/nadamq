@@ -1,11 +1,38 @@
+import os
 import platform
+import sys
 
-Import('env')
+import path_helpers as ph
+
+
+def conda_prefix():
+    '''
+    Returns
+    -------
+    path_helpers.path
+        Path to Conda environment prefix corresponding to running Python
+        executable.
+
+        Return ``None`` if not running in a Conda environment.
+    '''
+    if any(['continuum analytics, inc.' in sys.version.lower(),
+            'conda' in sys.version.lower()]):
+        # Assume running under Conda.
+        if 'CONDA_PREFIX' in os.environ:
+            conda_prefix = ph.path(os.environ['CONDA_PREFIX'])
+        else:
+            # Infer Conda prefix as parent directory of Python executable.
+            conda_prefix = ph.path(sys.executable).parent.realpath()
+    else:
+        # Assume running under Conda.
+        conda_prefix = None
+    return conda_prefix
+
 
 if platform.system() == 'Windows':
-    ragel = r'nadamq\tools\ragel-6.9\ragel.exe'
+    ragel = conda_prefix().joinpath('Library', 'bin', 'ragel.exe')
 else:
-    ragel = 'ragel'
+    ragel = conda_prefix().joinpath('bin', 'ragel')
 
 socket_fsm_src = Command('packet_socket_fsm_actions.cpp',
                          'packet_socket_fsm_actions.rl',
@@ -17,8 +44,3 @@ packet_actions_src = Command('packet_actions.cpp', 'packet_actions.rl',
                              '%s -G2 -o $TARGET $SOURCE' % ragel)
 
 Depends(packet_actions_src, 'packet.rl')
-#Depends(packet_dot, 'packet.rl')
-#Depends(packet_pdf, 'packet.rl')
-
-crc_objs = env.Object(['crc_common.cpp'])
-packet_actions = env.Object([packet_actions_src])

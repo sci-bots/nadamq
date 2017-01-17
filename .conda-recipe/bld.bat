@@ -16,8 +16,9 @@ REM an `if` block to only execute during package installation.
 
 "%PYTHON%" version.py
 
-REM Install source directory as Python package.
+REM Generate `packet_actions.cpp` from ragel state machine source.
 "%PYTHON%" -m paver copy_packet_actions
+REM Install source directory as Python package.
 "%PYTHON%" -m pip install --no-cache .
 if errorlevel 1 exit 1
 

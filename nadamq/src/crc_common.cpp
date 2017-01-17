@@ -10,7 +10,7 @@ uint16_t update_crc(uint16_t crc, uint8_t data) {
 }
 
 uint16_t finalize_crc(uint16_t crc) {
-#if defined(AVR)
+#if !defined(AVR)
     crc = crc_finalize(crc);
 #endif
     return crc;

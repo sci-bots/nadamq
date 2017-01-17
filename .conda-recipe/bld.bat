@@ -15,29 +15,29 @@ REM an `if` block to only execute during package installation.
 "%PYTHON%" -c "from __future__ import print_function; input_ = open('setup.py', 'r'); data = input_.read(); input_.close(); output_ = open('setup.py', 'w'); output_.write('\n'.join(['import sys', 'import path_helpers as ph', '''if ph.path(sys.argv[0]).name == 'conda-build-script.py':''', '    sys.argv.pop()', 'else:', '\n'.join([('    ' + d) for d in data.splitlines()])])); output_.close(); print(open('setup.py', 'r').read())"
 
 "%PYTHON%" version.py
-"%PYTHON%" -m paver sdist
-
-copy nadamq\src\Arduino\packet_handler\output_buffer.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\Arduino\packet_handler\packet_handler.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\Arduino\packet_handler\NadaMQ.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\BufferAllocator.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\Packet.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketAllocator.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketHandler.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketParser.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketSocket.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketSocketEvents.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketStream.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\PacketWriter.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\SimpleCommand.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\StreamPacketParser.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\crc-16.c "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\crc-16.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\crc_common.cpp "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\crc_common.h "%PREFIX%"\Library\include\Arduino\NadaMQ
-copy nadamq\src\packet_actions.cpp "%PREFIX%"\Library\include\Arduino\NadaMQ
-
 
 REM Install source directory as Python package.
 "%PYTHON%" -m pip install --no-cache .
+if errorlevel 1 exit 1
+
+REM Copy Arduino library files to Conda Arduino library.
+copy "%SP_DIR%"\nadamq\src\Arduino\packet_handler\output_buffer.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\Arduino\packet_handler\packet_handler.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\Arduino\packet_handler\NadaMQ.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\BufferAllocator.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\Packet.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketAllocator.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketHandler.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketParser.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketSocket.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketSocketEvents.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketStream.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\PacketWriter.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\SimpleCommand.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\StreamPacketParser.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\crc-16.c "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\crc-16.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\crc_common.cpp "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\crc_common.h "%PREFIX%"\Library\include\Arduino\NadaMQ
+copy "%SP_DIR%"\nadamq\src\packet_actions.cpp "%PREFIX%"\Library\include\Arduino\NadaMQ
 if errorlevel 1 exit 1

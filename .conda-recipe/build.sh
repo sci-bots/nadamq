@@ -18,6 +18,11 @@ mkdir -p "${PREFIX}"/include/Arduino/NadaMQ
 "${PYTHON}" -m pip install --no-cache .
 rc=$?; if [[ $rc != 0  ]]; then exit $rc; fi
 
+# Run build tests
+"${PYTHON}" -m paver build_ext --inplace
+nosetests -v nadamq/tests
+rc=$?; if [[ $rc != 0  ]]; then exit $rc; fi
+
 # Copy Arduino library files to Conda Arduino library.
 cp -ra "${SP_DIR}"/nadamq/src/Arduino/packet_handler/output_buffer.h "${PREFIX}"/include/Arduino/NadaMQ
 cp -ra "${SP_DIR}"/nadamq/src/Arduino/packet_handler/packet_handler.h "${PREFIX}"/include/Arduino/NadaMQ

@@ -22,6 +22,11 @@ REM Install source directory as Python package.
 "%PYTHON%" -m pip install --no-cache .
 if errorlevel 1 exit 1
 
+REM Run build tests
+"%PYTHON%" -m paver build_ext --inplace
+nosetests -v nadamq\tests
+if errorlevel 1 exit 1
+
 REM Copy Arduino library files to Conda Arduino library.
 copy "%SP_DIR%"\nadamq\src\Arduino\packet_handler\output_buffer.h "%PREFIX%"\Library\include\Arduino\NadaMQ
 copy "%SP_DIR%"\nadamq\src\Arduino\packet_handler\packet_handler.h "%PREFIX%"\Library\include\Arduino\NadaMQ

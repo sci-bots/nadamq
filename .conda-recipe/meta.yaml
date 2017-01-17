@@ -20,6 +20,8 @@ requirements:
     - libpython # [win]
     - m2-msys2-runtime # [win]
     - mingw # [win]
+    - nose
+    - numpy
     - path_helpers
     - paver
     - python
@@ -29,6 +31,12 @@ requirements:
   run:
     - python
     - c-array-defs >=0.2.post3
+    - numpy
+
+test:
+  imports:
+    - nadamq
+    - nadamq.NadaMq
 
 about:
   home: http://github.com/wheeler-microfluidics/nadamq

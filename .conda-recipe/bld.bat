@@ -17,6 +17,7 @@ REM an `if` block to only execute during package installation.
 "%PYTHON%" version.py
 
 REM Install source directory as Python package.
+"%PYTHON%" -m paver copy_packet_actions
 "%PYTHON%" -m pip install --no-cache .
 if errorlevel 1 exit 1
 

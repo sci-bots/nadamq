@@ -39,7 +39,5 @@ copy nadamq\src\packet_actions.cpp "%PREFIX%"\Library\include\Arduino\NadaMQ
 
 
 REM Install source directory as Python package.
-cd dist
-for /f %%i in ('dir /B *.tar.gz') do set DIST_FILE=%%i
-"%PYTHON%" -m pip install --no-cache %DIST_FILE%
+"%PYTHON%" -m pip install --no-cache .
 if errorlevel 1 exit 1

@@ -18,7 +18,6 @@ requirements:
     - cython
     - future
     - libpython # [win]
-    - m2-msys2-runtime # [win]
     - mingw # [win]
     - nose
     - numpy
@@ -31,6 +30,7 @@ requirements:
   run:
     - python
     - c-array-defs >=0.2.post3
+    - mingw-runtime # [win]
     - numpy
 
 test:

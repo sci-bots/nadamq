@@ -196,6 +196,14 @@ action ack_received {
   message_completed_ = true;
 }
 
+action id_request_received {
+  /* .. versionadded 0.13 */
+#if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
+  std::cout << "[id_request_received]" << std::endl;
+#endif  // #ifdef VERBOSE_STATES
+  message_completed_ = true;
+}
+
 action nack_received {
 #if !defined(AVR) && !defined(__arm__) && defined(VERBOSE_STATES)
   std::cout << "[nack_received]" << std::endl;

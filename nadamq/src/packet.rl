@@ -3,6 +3,9 @@
 #       core
 #       ../../packet-abnf_grammar.txt
 #
+# .. versionchanged:: 0.13
+#     Add ``ID_REQUEST`` and ``ID_RESPONSE`` packet types.
+#
 # [1]: http://www.2p.cz/en/abnf_gen/
 %%{
     # write your name
@@ -34,10 +37,14 @@
     payload = OCTET*;
     crc = OCTET{2};
 
+    # Packet types
     ACK = 'a';
     NACK = 'n';
     DATA = 'd';
     STREAM = 's';
+    # .. versionadded:: 0.13
+    ID_REQUEST = 'i';
+    ID_RESPONSE = 'I';
 
     # The `process_payload` state machine parses incoming bytes into the packet
     # buffer until the expected number of bytes has been read.
@@ -52,6 +59,10 @@
             (iuid >id_start $id_octet_received)
             (ACK >type_received @ack_received -> final |
              NACK >type_received -> ProcessingNack |
+             # .. versionadded:: 0.13
+             ID_REQUEST >type_received @id_request_received -> final |
+             # .. versionadded:: 0.13
+             ID_RESPONSE >type_received -> ProcessingData |
              STREAM >type_received -> ProcessingData |
              DATA >type_received -> ProcessingData)
         ),

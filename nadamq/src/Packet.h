@@ -34,8 +34,11 @@ using namespace std;
 
 class PacketBase {
 public:
+  /* .. versionchanged:: 0.13
+   *     Add ``ID_REQUEST`` and ``ID_RESPONSE`` packet types. */
   struct packet_type {
-    enum EnumType {NONE, ACK='a', NACK='n', DATA='d', STREAM='s'};
+    enum EnumType {NONE, ACK='a', NACK='n', DATA='d', STREAM='s',
+                   ID_REQUEST='i', ID_RESPONSE='I'};
   };
 
   /* Interface unique identifier. */

@@ -33,6 +33,8 @@ cdef class _PacketTypes:
         readonly int NACK
         readonly int DATA
         readonly int STREAM
+        readonly int ID_REQUEST
+        readonly int ID_RESPONSE
 
     def __cinit__(self):
         self.NONE = PACKET_TYPE_NONE
@@ -40,6 +42,8 @@ cdef class _PacketTypes:
         self.NACK = PACKET_TYPE_NACK
         self.DATA = PACKET_TYPE_DATA
         self.STREAM = PACKET_TYPE_STREAM
+        self.ID_REQUEST = PACKET_TYPE_ID_REQUEST
+        self.ID_RESPONSE = PACKET_TYPE_ID_RESPONSE
 
 
 PACKET_TYPES = _PacketTypes()
@@ -53,6 +57,8 @@ cdef extern from "PacketParser.h":
         PACKET_TYPE_NACK "Packet::packet_type::NACK"
         PACKET_TYPE_DATA "Packet::packet_type::DATA"
         PACKET_TYPE_STREAM "Packet::packet_type::STREAM"
+        PACKET_TYPE_ID_REQUEST "Packet::packet_type::ID_REQUEST"
+        PACKET_TYPE_ID_RESPONSE "Packet::packet_type::ID_RESPONSE"
 
     cdef cppclass FixedPacket:
         uint16_t iuid_
@@ -324,4 +330,6 @@ PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',
                        PACKET_TYPE_ACK: 'ACK',
                        PACKET_TYPE_NACK: 'NACK',
                        PACKET_TYPE_DATA: 'DATA',
-                       PACKET_TYPE_STREAM: 'STREAM'}
+                       PACKET_TYPE_STREAM: 'STREAM',
+                       PACKET_TYPE_ID_REQUEST: 'ID_REQUEST',
+                       PACKET_TYPE_ID_RESPONSE: 'ID_RESPONSE'}

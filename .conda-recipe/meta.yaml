@@ -30,7 +30,9 @@ requirements:
   run:
     - python
     - c-array-defs >=0.2.post3
-    - mingw-runtime # [win]
+    # ..versionchanged:: 0.12.1
+    #     See issue 2.
+    - mingw # [win]
     - numpy
 
 test:

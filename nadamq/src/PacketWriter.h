@@ -48,6 +48,9 @@ void serialize_any(Stream &output, T const &value) {
 
 template <typename Stream, typename Packet>
 inline void write_packet(Stream &output, Packet const &packet) {
+  /* ..versionchanged:: 0.13
+   *     Also write payload for ``ID_RESPONSE`` packets.
+   */
   Packet to_send = packet;
   /* Set the CRC checksum of the packet based on the contents of the payload.
    * */
@@ -58,8 +61,10 @@ inline void write_packet(Stream &output, Packet const &packet) {
   serialize_any(output, to_send.iuid_);
   uint8_t type_ = static_cast<uint8_t>(to_send.type());
   serialize_any(output, type_);
+
   if ((to_send.type() == Packet::packet_type::DATA) ||
-      (to_send.type() == Packet::packet_type::STREAM)) {
+      (to_send.type() == Packet::packet_type::STREAM) ||
+      (to_send.type() == Packet::packet_type::ID_RESPONSE)) {
     serialize_any(output, static_cast<uint16_t>(to_send.payload_length_));
     if (to_send.payload_length_ > 0) {
       output.write((stream_byte_type*)to_send.payload_buffer_,

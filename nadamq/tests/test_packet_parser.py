@@ -26,3 +26,28 @@ def test_parse_nack():
 
     # TODO Should parse fail with `NACK` type?  It currently does.
     nt.assert_false(b)
+
+
+def test_parse_id_response():
+    '''
+    .. versionadded:: 0.13
+    '''
+    a = cPacket(iuid=1234, type_=PACKET_TYPES.ID_RESPONSE,
+                data='{"id": "my device name"}')
+    b = parse_from_string(a.tostring())
+
+    nt.eq_(a.type_, b.type_)
+    nt.eq_(a.iuid, b.iuid)
+    nt.eq_(a.crc, b.crc)
+    # nt.eq_(a.data(), b.data())
+
+
+def test_parse_id_request():
+    '''
+    .. versionadded:: 0.13
+    '''
+    a = cPacket(iuid=1234, type_=PACKET_TYPES.ID_REQUEST)
+    b = parse_from_string(a.tostring())
+
+    nt.eq_(a.type_, b.type_)
+    nt.eq_(a.iuid, b.iuid)

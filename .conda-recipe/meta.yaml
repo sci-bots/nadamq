@@ -28,6 +28,7 @@ requirements:
     - python
     - ragel
     - scons
+    - si-prefix
 
   run:
     - python
@@ -38,6 +39,7 @@ requirements:
     - numpy
     # .. versionadded:: 0.14
     - or-event
+    - si-prefix
 
 test:
   imports:

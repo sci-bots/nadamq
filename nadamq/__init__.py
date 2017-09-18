@@ -4,6 +4,8 @@ import threading
 
 from or_event import OrEvent
 import numpy as np
+import si_prefix as si
+
 
 def get_includes():
     r"""
@@ -77,6 +79,8 @@ def read_packet(read_func, timeout_s=None, poll_s=0.001):
     '''
     Read packet from specified callback function.
 
+    Blocks until full packet is read (or exception occurs).
+
     .. versionadded:: 0.14
 
     Parameters
@@ -144,8 +148,9 @@ def read_packet(read_func, timeout_s=None, poll_s=0.001):
 
     if not complete.wait(timeout=timeout_s):
         stop_request.set()
-        raise RuntimeError('Timed out waiting for packet (after %.1f seconds).'
-                           % (start - dt.datetime.utcnow()).total_seconds())
+        raise RuntimeError('Timed out waiting for packet (after %ss).' %
+                           si.si_format((dt.datetime.utcnow() -
+                                         start).total_seconds()))
     elif parse_error.is_set():
         # Exception occurred while reading/parsing.
         raise parse_error._exception

@@ -5,9 +5,6 @@ import threading
 from or_event import OrEvent
 import numpy as np
 
-from .NadaMq import cPacketParser
-
-
 def get_includes():
     r"""
     Return the directory that contains the `nadamq` Cython *.hpp and
@@ -106,6 +103,8 @@ def read_packet(read_func, timeout_s=None, poll_s=0.001):
         If an exception is encountered while reading or parsing, the exception
         is raised.
     '''
+    from .NadaMq import cPacketParser
+
     # Record start time.
     start = dt.datetime.utcnow()
 

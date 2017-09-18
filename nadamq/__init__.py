@@ -2,7 +2,6 @@ import os
 
 
 def get_includes():
-    import nadamq
     r"""
     Return the directory that contains the `nadamq` Cython *.hpp and
     *.pxd header files.
@@ -22,11 +21,10 @@ def get_includes():
         ...
 
     """
-    return [os.path.join(os.path.dirname(nadamq.__file__), 'src')]
+    return [os.path.join(os.path.dirname(__file__), 'src')]
 
 
 def get_sources():
-    import nadamq
     r"""
     Return a list of the additional *.cpp files that must be compiled along
     with the `nadamq` Cython extension definitions.

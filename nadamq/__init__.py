@@ -1,8 +1,13 @@
+import datetime as dt
 import os
+import threading
+
+from or_event import OrEvent
+import numpy as np
+import si_prefix as si
 
 
 def get_includes():
-    import nadamq
     r"""
     Return the directory that contains the `nadamq` Cython *.hpp and
     *.pxd header files.
@@ -22,11 +27,10 @@ def get_includes():
         ...
 
     """
-    return [os.path.join(os.path.dirname(nadamq.__file__), 'src')]
+    return [os.path.join(os.path.dirname(__file__), 'src')]
 
 
 def get_sources():
-    import nadamq
     r"""
     Return a list of the additional *.cpp files that must be compiled along
     with the `nadamq` Cython extension definitions.
@@ -69,3 +73,85 @@ def get_arduino_library_sources():
                        ('crc_common.cpp',), ('crc_common.h',),
                        ('packet_actions.cpp',)]
     return [os.path.join(source_dir, *f) for f in library_sources]
+
+
+def read_packet(read_func, timeout_s=None, poll_s=0.001):
+    '''
+    Read packet from specified callback function.
+
+    Blocks until full packet is read (or exception occurs).
+
+    .. versionadded:: 0.14
+
+    Parameters
+    ----------
+    read_func : function
+        Callback function.  Must return ``bytes``.
+    timeout_s : float, optional
+        Number of seconds to wait for full packet.
+
+        By default, block until packet is received.
+    poll_s : float, optional
+        Time to wait between calls to :func:`read_func`.
+
+    Returns
+    -------
+    cPacket
+        Parsed packet.
+
+    Raises
+    ------
+    RuntimeError
+        If specified time out is reached before a packet is received.
+    Exception
+        If an exception is encountered while reading or parsing, the exception
+        is raised.
+    '''
+    from .NadaMq import cPacketParser
+
+    # Record start time.
+    start = dt.datetime.utcnow()
+
+    stop_request = threading.Event()
+    packet_ready = threading.Event()
+    parse_error = threading.Event()
+
+    result = {}
+
+    def _do_read(read_func, output):
+        parser = cPacketParser()
+
+        try:
+            while True:
+                data = read_func()
+                if data:
+                    result_ = parser.parse(np.fromstring(data, dtype='uint8'))
+                    if result_ is not False:
+                        output['response'] = result_
+                        packet_ready.set()
+                        break
+                if stop_request.wait(poll_s):
+                    break
+        except Exception, exception:
+            # Exception occurred while reading/parsing.
+            # Store exception and report to calling thread.
+            parse_error._exception = exception
+            parse_error.set()
+
+    # Start background thread to read data.
+    thread = threading.Thread(target=_do_read, args=(read_func, result))
+    thread.daemon = True
+    thread.start()
+
+    # Create combined event to wait for either a completed packet or an error.
+    complete = OrEvent(packet_ready, parse_error)
+
+    if not complete.wait(timeout=timeout_s):
+        stop_request.set()
+        raise RuntimeError('Timed out waiting for packet (after %ss).' %
+                           si.si_format((dt.datetime.utcnow() -
+                                         start).total_seconds()))
+    elif parse_error.is_set():
+        # Exception occurred while reading/parsing.
+        raise parse_error._exception
+    return result['response']

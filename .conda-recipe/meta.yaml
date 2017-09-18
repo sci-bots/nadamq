@@ -21,11 +21,14 @@ requirements:
     - mingw # [win]
     - nose
     - numpy
+    # .. versionadded:: 0.14
+    - or-event
     - path_helpers
     - paver
     - python
     - ragel
     - scons
+    - si-prefix
 
   run:
     - python
@@ -34,6 +37,9 @@ requirements:
     #     See issue 2.
     - mingw # [win]
     - numpy
+    # .. versionadded:: 0.14
+    - or-event
+    - si-prefix
 
 test:
   imports:

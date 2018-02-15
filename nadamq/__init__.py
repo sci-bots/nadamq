@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import datetime as dt
 import os
 import threading
@@ -133,7 +134,7 @@ def read_packet(read_func, timeout_s=None, poll_s=0.001):
                         break
                 if stop_request.wait(poll_s):
                     break
-        except Exception, exception:
+        except Exception as exception:
             # Exception occurred while reading/parsing.
             # Store exception and report to calling thread.
             parse_error._exception = exception

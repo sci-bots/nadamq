@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import re
 from cStringIO import StringIO
@@ -6,7 +8,7 @@ from path_helpers import path
 
 
 def generate_ragel_events_header(input_path, output):
-    print >> output, '''\
+    print('''\
 #ifndef ___PACKET_SOCKET_EVENTS__HPP___
 #define ___PACKET_SOCKET_EVENTS__HPP___
 
@@ -14,21 +16,21 @@ def generate_ragel_events_header(input_path, output):
 
 inline std::string event_label(uint8_t event) {
   switch (event) {
-'''
+''', file=output)
 
     with open('packet_socket_fsm.rl', 'rb') as input_file:
         cre_event = re.compile(r"^\s+(?P<label>\w+).*(?P<char>'.');",
                                re.MULTILINE)
         for label, char in cre_event.findall(input_file.read()):
-            print >> output, '''    case %s: return "%s";''' % (char, label)
+            print('''    case %s: return "%s";''' % (char, label), file=output)
 
-    print >> output, '''
+    print('''
     default: return "<unknown event>";
   }
 }
 
 #endif  // #ifndef ___PACKET_SOCKET_EVENTS__HPP___
-'''
+''', file=output)
     return output
 
 
@@ -68,4 +70,4 @@ if __name__ == '__main__':
         if args.output_path is not None:
             output.close()
         else:
-            print output.getvalue()
+            print(output.getvalue())

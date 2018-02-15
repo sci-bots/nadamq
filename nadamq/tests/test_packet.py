@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from nose.tools import eq_, ok_
 from nadamq.NadaMq import cPacket, PACKET_TYPES
 
@@ -37,7 +38,7 @@ def test_no_buffer():
     p = cPacket(iuid=1234, type_=PACKET_TYPES.DATA)
     try:
         p.data()
-    except RuntimeError, e:
+    except RuntimeError as e:
         ok_('No buffer has been set/allocated.' in str(e))
 
 

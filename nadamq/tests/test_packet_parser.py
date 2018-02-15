@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from nadamq.NadaMq import cPacket, parse_from_string, PACKET_TYPES
 import nose.tools as nt
 

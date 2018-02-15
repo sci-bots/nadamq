@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 import sys
 import os
@@ -26,11 +28,11 @@ def get_arduino_paths():
         fs += get_avrdude_list(p)
 
     if not fs:
-        print >> sys.stderr, '''\
+        print('''\
     ERROR: arduino install directory not found!
 
     Searched:
-        %s''' % '\n    '.join(ARDUINO_SEARCH_PATHS)
+        %s''' % '\n    '.join(ARDUINO_SEARCH_PATHS), file=sys.stderr)
         sys.exit(1)
 
     if os.name == 'nt':
@@ -45,12 +47,12 @@ def get_arduino_paths():
     while p and p.name != 'hardware':
         p = p.parent
     if not p:
-        print >> sys.stderr, '''Arduino install path not found.'''
+        print('''Arduino install path not found.''', file=sys.stderr)
         sys.exit(1)
     arduino_path = p.parent
     avrdude_conf = list(arduino_path.walkfiles('avrdude.conf'))
     if not avrdude_conf:
-        print >> sys.stderr, '''avrdude configuration (avrdude.conf) path not found.'''
+        print('''avrdude configuration (avrdude.conf) path not found.''', file=sys.stderr)
         sys.exit(1)
     else:
         avrdude_conf = avrdude_conf[0]
@@ -65,7 +67,7 @@ def get_arduino_version(p):
     while p and not (p / path('revisions.txt')).exists():
         p = p.parent
     if not p:
-        print >> sys.stderr, '''Arduino install path not found.'''
+        print('''Arduino install path not found.''', file=sys.stderr)
         sys.exit(1)
     with open(p / path('revisions.txt'), 'r') as f:
         version = f.readline()
@@ -79,6 +81,6 @@ def get_arduino_version(p):
 
 if __name__ == '__main__':
     arduino_path, avrdude, avrdude_conf = get_arduino_paths()
-    print 'found arduino path:', arduino_path
-    print 'using newest avrdude:', avrdude
-    print 'using avrdude config:', avrdude_conf
+    print('found arduino path:', arduino_path)
+    print('using newest avrdude:', avrdude)
+    print('using avrdude config:', avrdude_conf)

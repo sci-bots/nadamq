@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 from subprocess import Popen, PIPE, check_call, CalledProcessError
 import re
@@ -47,7 +48,7 @@ class GitUtil(object):
                 valid_cmd = True
                 break
         if not valid_cmd:
-            raise GitError, 'No valid git command found'
+            raise GitError('No valid git command found')
         self._git = cmd
         return self._git
 

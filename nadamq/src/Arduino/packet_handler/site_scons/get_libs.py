@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import sys
 
@@ -11,9 +12,9 @@ def get_lib_paths():
         lib_paths = set(os.environ['PATH'].split(';'))
     else:
         lib_paths = set()
-        if os.environ.has_key('LIBRARY_PATH'):
+        if 'LIBRARY_PATH' in os.environ:
             lib_paths.update(os.environ['LIBRARY_PATH'].split(':'))
-        if os.environ.has_key('LD_LIBRARY_PATH'):
+        if 'LD_LIBRARY_PATH' in os.environ:
             lib_paths.update(os.environ['LD_LIBRARY_PATH'].split(':'))
         lib_paths = (['/usr/lib', '/usr/lib/x86_64-linux-gnu',
                       '/usr/local/lib'] + list(lib_paths))

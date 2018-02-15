@@ -16,6 +16,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os,sys
 from SCons.Script import *
 import re
@@ -97,8 +99,8 @@ def disttar(target, source, env):
                 os.makedirs(target_dir)
 
         # open our tar file for writing
-        print >> sys.stderr, 'DistTar: Writing %s' % str(target[0])
-        print >> sys.stderr, '  with contents: %s' % [str(s) for s in source]
+        print('DistTar: Writing %s' % str(target[0]), file=sys.stderr)
+        print('  with contents: %s' % [str(s) for s in source], file=sys.stderr)
         tar = tarfile.open(str(target[0]), "w:%s" % tar_format)
 
         # write sources to our tar file
@@ -116,7 +118,7 @@ def disttar_suffix(env, sources):
         """tar archive suffix generator"""
 
         env_dict = env.Dictionary()
-        if env_dict.has_key("DISTTAR_FORMAT") and env_dict["DISTTAR_FORMAT"] in ["gz", "bz2"]:
+        if "DISTTAR_FORMAT" in env_dict and env_dict["DISTTAR_FORMAT"] in ["gz", "bz2"]:
                 return ".tar." + env_dict["DISTTAR_FORMAT"]
         else:
                 return ".tar"

@@ -4,6 +4,9 @@ environment:
     - PYTHON_VERSION: 2.7
       MINICONDA: C:\Miniconda
       PYTHON_ARCH: "32"
+    - PYTHON_VERSION: 3.6
+      MINICONDA: C:\Miniconda
+      PYTHON_ARCH: "32"
 
 version: '0.11.18_appveyor-{build}'
 

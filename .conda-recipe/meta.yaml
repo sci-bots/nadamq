@@ -25,27 +25,26 @@ requirements:
     - c-array-defs >=0.2.post3
     - cython
     - future
-    - libpython # [win]
-    - mingw # [win]
     - nose
     - numpy
-    # .. versionadded:: 0.14
+    #: .. versionadded:: 0.14
     - or-event
     - path_helpers
     - paver
-    - python
+    #: .. versionchanged:: X.X.X
+    - python {{ python }}
     - ragel
     - scons
     - si-prefix
+    #: .. versionadded:: X.X.X
+    - msinttypes  # [py27]
 
   run:
-    - python
+    # .. versionchanged:: X.X.X
+    - python {{ python }}
     - c-array-defs >=0.2.post3
-    # ..versionchanged:: 0.12.1
-    #     See issue 2.
-    - mingw # [win]
     - numpy
-    # .. versionadded:: 0.14
+    #: .. versionadded:: 0.14
     - or-event
     - si-prefix
 

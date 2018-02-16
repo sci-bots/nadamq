@@ -1,6 +1,6 @@
 @echo off
 REM Generate `setup.py` from `pavement.py` definition.
-"%PYTHON%" -m paver generate_setup
+python -m paver generate_setup
 setlocal enableextensions
 md "%PREFIX%"\Library\include\Arduino\NadaMQ
 endlocal
@@ -12,18 +12,18 @@ REM task name.
 REM
 REM We can work around this by wrapping the original contents of `setup.py` in
 REM an `if` block to only execute during package installation.
-"%PYTHON%" -c "from __future__ import print_function; input_ = open('setup.py', 'r'); data = input_.read(); input_.close(); output_ = open('setup.py', 'w'); output_.write('\n'.join(['import sys', 'import path_helpers as ph', '''if ph.path(sys.argv[0]).name == 'conda-build-script.py':''', '    sys.argv.pop()', 'else:', '\n'.join([('    ' + d) for d in data.splitlines()])])); output_.close(); print(open('setup.py', 'r').read())"
+python -c "from __future__ import print_function; input_ = open('setup.py', 'r'); data = input_.read(); input_.close(); output_ = open('setup.py', 'w'); output_.write('\n'.join(['import sys', 'import path_helpers as ph', '''if ph.path(sys.argv[0]).name == 'conda-build-script.py':''', '    sys.argv.pop()', 'else:', '\n'.join([('    ' + d) for d in data.splitlines()])])); output_.close(); print(open('setup.py', 'r').read())"
 
-"%PYTHON%" version.py
+python version.py
 
 REM Generate `packet_actions.cpp` from ragel state machine source.
-"%PYTHON%" -m paver copy_packet_actions
+python -m paver copy_packet_actions
 REM Install source directory as Python package.
-"%PYTHON%" -m pip install --no-cache .
+python -m pip install --no-cache .
 if errorlevel 1 exit 1
 
 REM Run build tests
-"%PYTHON%" -m paver build_ext --inplace
+python -m paver build_ext --inplace
 nosetests -v nadamq\tests
 if errorlevel 1 exit 1
 

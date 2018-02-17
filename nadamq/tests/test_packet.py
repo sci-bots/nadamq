@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 from nose.tools import eq_, ok_
 from nadamq.NadaMq import cPacket, PACKET_TYPES
 
@@ -7,18 +8,18 @@ def test_buffer_auto():
     '''
     Test auto-buffer based on data content.
     '''
-    p = cPacket(iuid=1234, type_=PACKET_TYPES.DATA, data='hello, world!')
-    eq_(p.buffer_size, len('hello, world!'))
-    eq_(p.data(), 'hello, world!')
+    p = cPacket(iuid=1234, type_=PACKET_TYPES.DATA, data=b'hello, world!')
+    eq_(p.buffer_size, len(b'hello, world!'))
+    eq_(p.data(), b'hello, world!')
 
 
 def test_buffer_larger_than_data():
     '''
     Test setting data while allocating larger buffer.
     '''
-    p = cPacket(iuid=1234, type_=PACKET_TYPES.DATA, data='hello, world!',
+    p = cPacket(iuid=1234, type_=PACKET_TYPES.DATA, data=b'hello, world!',
                 buffer_size=1024)
-    eq_(p.data(), 'hello, world!')
+    eq_(p.data(), b'hello, world!')
     eq_(p.buffer_size, 1024)
 
 
@@ -28,7 +29,7 @@ def test_buffer():
     '''
     p = cPacket(iuid=1234, type_=PACKET_TYPES.DATA, buffer_size=1024)
     eq_(p.buffer_size, 1024)
-    eq_(p.data(), '')
+    eq_(p.data(), b'')
 
 
 def test_no_buffer():
@@ -56,5 +57,5 @@ def test_cPacket():
     '''
     Test serialization of ``cPacket`` containing ``"hello, world!"``.
     '''
-    packet = cPacket(data='hello, world!', type_=PACKET_TYPES.DATA)
-    eq_(packet.tostring(), bytes('|||\x00\x00d\x00\rhello, world!\xfa5'))
+    packet = cPacket(data=b'hello, world!', type_=PACKET_TYPES.DATA)
+    eq_(packet.tobytes(), b'|||\x00\x00d\x00\rhello, world!\xfa5')

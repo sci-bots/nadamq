@@ -47,5 +47,5 @@ test:
     - nadamq.NadaMq
 
 about:
-  home: http://github.com/wheeler-microfluidics/nadamq
+  home: https://github.com/sci-bots/nadamq
   license: MIT

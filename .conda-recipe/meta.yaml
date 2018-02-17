@@ -37,6 +37,8 @@ requirements:
     - scons
     - si-prefix
     #: .. versionadded:: X.X.X
+    - {{ compiler('c') }}  # [not py27]
+    #: .. versionadded:: X.X.X
     - msinttypes  # [py27]
 
   run:

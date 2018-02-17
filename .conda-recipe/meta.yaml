@@ -10,7 +10,7 @@ source:
 
 package:
   name: nadamq
-  #: .. versionchanged:: X.X.X
+  #: .. versionchanged:: 0.15
   #:     Use git describe tag as version.  If not on a tag, append
   #:     `.post<describe number>`.
   version: {{ GIT_VERSION }}
@@ -31,20 +31,20 @@ requirements:
     - or-event
     - path_helpers
     - paver
-    #: .. versionchanged:: X.X.X
+    #: .. versionchanged:: 0.15
     - python {{ python }}
     - ragel
     - scons
     - si-prefix
-    #: .. versionadded:: X.X.X
+    #: .. versionadded:: 0.15
     - {{ compiler('c') }}  # [not py27]
-    #: .. versionadded:: X.X.X
+    #: .. versionadded:: 0.15
     - msinttypes  # [py27]
 
   run:
-    #: .. versionadded:: X.X.X
+    #: .. versionadded:: 0.15
     - future
-    #: .. versionchanged:: X.X.X
+    #: .. versionchanged:: 0.15
     - python {{ python }}
     - c-array-defs >=0.2.post3
     - numpy

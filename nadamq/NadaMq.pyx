@@ -201,7 +201,7 @@ cdef class cPacket:
             Serialized packet.
 
 
-        .. versionadded:: X.X.X
+        .. versionadded:: 0.15
         '''
         return bytes(self.tostring())
 
@@ -344,7 +344,7 @@ def byte_pair(value):
 
 def parse_from_string(packet_str):
     '''
-    .. versionchanged:: X.X.X
+    .. versionchanged:: 0.15
         Coerce :data:`packet_str` to :class:`bytes` and do not use :func:`ord`
         to decode characters.  This is required to support both Python 2 and 3.
 

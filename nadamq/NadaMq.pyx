@@ -9,6 +9,7 @@ from libc.string cimport memcpy
 
 import re
 
+from builtins import bytes
 import numpy as np
 
 
@@ -179,10 +180,30 @@ cdef class cPacket:
         '''
         Serialize packet according to format defined in the `write_packet` C++
         function.
+
+        Returns
+        -------
+        str
+            Serialized packet.
         '''
         cdef stringstream output
         write_packet(output, deref(self.thisptr))
         return output.str_()
+
+    def tobytes(self):
+        '''
+        Serialize packet according to format defined in the `write_packet` C++
+        function.
+
+        Returns
+        -------
+        bytes
+            Serialized packet.
+
+
+        .. versionadded:: X.X.X
+        '''
+        return bytes(self.tostring())
 
     property crc:
         def __get__(self):
@@ -322,8 +343,20 @@ def byte_pair(value):
 
 
 def parse_from_string(packet_str):
+    '''
+    .. versionchanged:: X.X.X
+        Coerce :data:`packet_str` to :class:`bytes` and do not use :func:`ord`
+        to decode characters.  This is required to support both Python 2 and 3.
+
+
+    Returns
+    -------
+    cPacket
+        Parsed packet instance.
+    '''
     parser = cPacketParser()
-    return parser.parse(np.array([ord(v) for v in packet_str], dtype='uint8'))
+    return parser.parse(np.array([v for v in bytes(packet_str)],
+                                 dtype='uint8'))
 
 
 PACKET_NAME_BY_TYPE = {PACKET_TYPE_NONE: 'NONE',

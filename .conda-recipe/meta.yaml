@@ -40,7 +40,9 @@ requirements:
     - msinttypes  # [py27]
 
   run:
-    # .. versionchanged:: X.X.X
+    #: .. versionadded:: X.X.X
+    - future
+    #: .. versionchanged:: X.X.X
     - python {{ python }}
     - c-array-defs >=0.2.post3
     - numpy

@@ -5,7 +5,6 @@
 
 #ifndef AVR
 #include "crc-16.h"
-using namespace std;
 #else
 
 /* AVR headers define `_crc16_update` function. */

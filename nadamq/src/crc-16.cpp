@@ -16,7 +16,6 @@
 #include "crc-16.h"     /* include the header file generated with pycrc */
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 /**
  * Reflect all bits of a \a data word of \a data_len bytes.

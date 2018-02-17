@@ -19,6 +19,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#if (_MSC_VER == 1500)  // Visual Studio 2008 (https://stackoverflow.com/a/70630/345236)
+#define inline __inline  // See https://stackoverflow.com/a/46698087/345236
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

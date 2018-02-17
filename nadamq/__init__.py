@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import datetime as dt
 import os
 import threading
@@ -51,7 +52,8 @@ def get_sources():
 
     """
     source_dir = get_includes()[0]
-    return [os.path.join(source_dir, f) for f in ('crc-16.c', 'crc_common.cpp',
+    return [os.path.join(source_dir, f) for f in ('crc-16.cpp',
+                                                  'crc_common.cpp',
                                                   'packet_actions.cpp')]
 
 
@@ -132,7 +134,7 @@ def read_packet(read_func, timeout_s=None, poll_s=0.001):
                         break
                 if stop_request.wait(poll_s):
                     break
-        except Exception, exception:
+        except Exception as exception:
             # Exception occurred while reading/parsing.
             # Store exception and report to calling thread.
             parse_error._exception = exception

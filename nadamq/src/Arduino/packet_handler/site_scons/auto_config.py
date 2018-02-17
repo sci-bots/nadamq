@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import re
@@ -5,7 +7,7 @@ import re
 from SCons.Script import Export
 
 from path_helpers import path
-from find_avrdude import get_arduino_paths
+from .find_avrdude import get_arduino_paths
 
 
 def get_python_path():
@@ -38,10 +40,10 @@ Export('PYTHON_LIB', 'PYTHON_LIB_PATH', 'PYTHON_INC_PATH')
 
 if __name__ == '__main__':
     if os.name == 'nt':
-        print get_boost_lib_path()
+        print(get_boost_lib_path())
 
-    print get_python_path()
+    print(get_python_path())
     arduino_path, avrdude, avrdude_conf = get_arduino_paths()
-    print 'found arduino path:', arduino_path
-    print 'using newest avrdude:', avrdude
-    print 'using avrdude config:', avrdude_conf
+    print('found arduino path:', arduino_path)
+    print('using newest avrdude:', avrdude)
+    print('using avrdude config:', avrdude_conf)

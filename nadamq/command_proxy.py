@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from pprint import pprint
 from datetime import datetime
 import re
@@ -7,6 +9,8 @@ import time
 import numpy as np
 from nadamq.NadaMq import (cPacket, PACKET_TYPES, cPacketParser)
 import serial
+import six
+from six.moves import range
 
 
 # Function to convert from camel-case to underscore separated.  Taken from
@@ -102,7 +106,7 @@ class CommandRequestManagerBase(object):
         '''
         Return a list containing the camel-case name of each available command.
         '''
-        return self.request_types.keys()
+        return list(self.request_types.keys())
 
     def request(self, request_type_name, **kwargs):
         '''
@@ -132,15 +136,15 @@ class CommandRequestManagerDebug(CommandRequestManagerBase):
     def request(self, request_type_name, **kwargs):
         encoded_request = super(CommandRequestManagerDebug,
                                 self).request(request_type_name, **kwargs)
-        print '# `%sRequest` #' % request_type_name
-        print ''
-        print ' - Arguments:'
-        for k, v in kwargs.iteritems():
-            print '  - `%s`: `%s`' % (k, v)
+        print('# `%sRequest` #' % request_type_name)
+        print('')
+        print(' - Arguments:')
+        for k, v in six.iteritems(kwargs):
+            print('  - `%s`: `%s`' % (k, v))
         data = np.fromstring(encoded_request, dtype=np.uint8)
-        print ' - Encoded: `%s`' % repr(data.tostring())
-        print '            `%s`' % data
-        print ''
+        print(' - Encoded: `%s`' % repr(data.tostring()))
+        print('            `%s`' % data)
+        print('')
         return encoded_request
 
     def response(self, byte_data):
@@ -234,10 +238,10 @@ class NodeProxy(object):
                 command_func = (lambda **kwargs:
                                 self._do_request_from_command_name(
                                     name, **kwargs))
-            for i in xrange(retry_count):
+            for i in range(retry_count):
                 try:
                     return command_func(**kwargs)
-                except ValueError, exception:
+                except ValueError as exception:
                     exception_str = str(exception)
                     if not exception_str.startswith('Timeout'):
                         raise
@@ -357,7 +361,7 @@ class SerialStream(object):
         self._serial = serial.Serial(*self._args, **self._kwargs)
         time.sleep(.05)
         # Flush welcome message.
-        print self.read()
+        print(self.read())
 
     def available(self):
         return self._serial.inWaiting()
@@ -427,10 +431,10 @@ class RemoteNodeProxy(object):
                     .forward_i2c_request(address=self._remote_address,
                                          request=request))
             command_func = _remote_func
-            for i in xrange(retry_count):
+            for i in range(retry_count):
                 try:
                     return command_func(**kwargs)
-                except ValueError, exception:
+                except ValueError as exception:
                     exception_str = str(exception)
                     if not exception_str.startswith('Timeout'):
                         raise

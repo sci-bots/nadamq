@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 from pprint import pprint
 try:
@@ -50,7 +51,6 @@ setup(name='nadamq',
       url='https://github.com/wheeler-microfluidics/nadamq',
       license='GPL',
       packages=['nadamq', ],
-      install_requires=['c-array-defs>=0.1.post2'],
       # Install data listed in `MANIFEST.in`
       include_package_data=True,
       ext_modules=extensions)

@@ -36,6 +36,8 @@
 #
 # $ scons EXTRA_LIB=<my-extra-library-dir>
 #
+from __future__ import absolute_import
+from __future__ import print_function
 from glob import glob
 import sys
 import re
@@ -48,17 +50,18 @@ import json
 from path_helpers import path
 from SCons.Environment import Environment
 from SCons.Builder import Builder
+import six
 
 
 def run(cmd):
     '''
     Run a command and decipher the return code. Exit by default.
     '''
-    print ' '.join(cmd)
+    print(' '.join(cmd))
     try:
         check_call(cmd)
     except CalledProcessError as cpe:
-        print 'Error: return code: ' + str(cpe.returncode)
+        print('Error: return code: ' + str(cpe.returncode))
         sys.exit(cpe.returncode)
 
 
@@ -120,8 +123,8 @@ class ArduinoBuildContext(object):
         self.core_root = self.build_root.joinpath('core')
 	if not self.core_root.isdir():
 	    self.core_root.makedirs_p()
-	print '[build-core directory] %s (%s)' % (self.core_root,
-                                                  self.core_root.isdir())
+	print('[build-core directory] %s (%s)' % (self.core_root,
+                                                  self.core_root.isdir()))
         self.resolve_config_vars()
 
     # Reset
@@ -187,7 +190,7 @@ class ArduinoBuildContext(object):
         self.EXTRA_LIB = self.resolve_var('EXTRA_LIB', None)
 
         if not self.ARDUINO_HOME:
-            print 'ARDUINO_HOME must be defined.'
+            print('ARDUINO_HOME must be defined.')
             raise KeyError('ARDUINO_HOME')
 
         self.ARDUINO_CONF = self.get_arduino_conf(self.ARDUINO_BOARD)
@@ -209,7 +212,7 @@ class ArduinoBuildContext(object):
                 #print "0023 or below"
                 self.ARDUINO_VER = 23
         else:
-            print "Arduino version " + self.ARDUINO_VER + " specified"
+            print("Arduino version " + self.ARDUINO_VER + " specified")
 
         # Some OSs need bundle with IDE tool-chain
         if os.name == 'darwin' or os.name == 'nt':
@@ -250,7 +253,7 @@ class ArduinoBuildContext(object):
                     TARGET = possible_files[0].namebase
         assert(TARGET is not None)
 
-        print os.getcwd(), TARGET
+        print(os.getcwd(), TARGET)
 
         self.sketch_ext = '.ino' if os.path.exists(TARGET + '.ino') else '.pde'
         self.TARGET = TARGET
@@ -293,11 +296,11 @@ class ArduinoBuildContext(object):
                     boards[result.group(1)] = (result.group(2), bf)
 
         if board_name not in boards:
-            print ('ERROR! the given board name, %s is not in the supported '
-                   'board list:' % board_name)
-            print "all available board names are:"
-            for name, description in boards.iteritems():
-                print "\t%s for %s" % (name.ljust(14), description[0])
+            print(('ERROR! the given board name, %s is not in the supported '
+                   'board list:' % board_name))
+            print("all available board names are:")
+            for name, description in six.iteritems(boards):
+                print("\t%s for %s" % (name.ljust(14), description[0]))
             #print "however, you may edit %s to add a new board." % ARDUINO_CONF
             sys.exit(-1)
         return boards[board_name][1]
@@ -311,7 +314,7 @@ class ArduinoBuildContext(object):
                     return value
         ret = default
         if ret == None:
-            print "ERROR! can't find %s in %s" % (conf, self.ARDUINO_CONF)
+            print("ERROR! can't find %s in %s" % (conf, self.ARDUINO_CONF))
             assert(False)
         return ret
 
@@ -349,20 +352,20 @@ class ArduinoBuildContext(object):
         if hw_variant:
             env_defaults['CPPPATH'].append(hw_variant)
 
-        for k, v in kwargs.iteritems():
-            print 'processing kwarg: %s->%s' % (k, v)
+        for k, v in six.iteritems(kwargs):
+            print('processing kwarg: %s->%s' % (k, v))
             if k in env_defaults and isinstance(env_defaults[k], dict)\
                     and isinstance(v, dict):
                 env_defaults[k].update(v)
-                print '  update dict'
+                print('  update dict')
             elif k in env_defaults and isinstance(env_defaults[k], list):
                 env_defaults[k].append(v)
-                print '  append to list'
+                print('  append to list')
             else:
                 env_defaults[k] = v
-                print '  set value'
-        print 'kwargs:', kwargs
-        print 'env_defaults:', env_defaults
+                print('  set value')
+        print('kwargs:', kwargs)
+        print('env_defaults:', env_defaults)
         env_arduino = Environment(**env_defaults)
         # Add Arduino Processing, Elf, and Hex builders to environment
         for builder_name in ['Processing', 'CompressCore', 'Elf', 'Hex',
@@ -411,7 +414,7 @@ class ArduinoBuildContext(object):
         for orig_lib_dir in self.ARDUINO_LIBS:
             lib_sources = []
             lib_dir = self.build_root.joinpath('lib_%02d' % index)
-            print 'build_root: %s' % self.build_root
+            print('build_root: %s' % self.build_root)
             env.VariantDir(lib_dir, orig_lib_dir)
             for lib_path in path(orig_lib_dir).dirs():
                 lib_name = lib_path.name
@@ -464,7 +467,7 @@ class ArduinoBuildContext(object):
 	    target_path.parent.makedirs_p()
         for core_file in core_files:
 	    core_file_path = path(core_file).abspath()
-	    print '[compress_core_action]', core_file_path, core_file_path.isfile()
+	    print('[compress_core_action]', core_file_path, core_file_path.isfile())
 	    command = [self.AVR_BIN_PREFIX + 'ar', 'rcs', target_path,
 		       core_file_path]
             run(command)
@@ -472,12 +475,12 @@ class ArduinoBuildContext(object):
     def print_info_action(self, target, source, env):
         for k in self.VARTAB:
             came_from, value = self.VARTAB[k]
-            print '* %s: %s (%s)' % (k, value, came_from)
-        print '* avr-size:'
+            print('* %s: %s (%s)' % (k, value, came_from))
+        print('* avr-size:')
         run([self.AVR_BIN_PREFIX + 'size', '--target=ihex', str(source[0])])
         # TODO: check binary size
-        print ('* maximum size for hex file: %s bytes' %
-               self.get_board_conf('upload.maximum_size'))
+        print(('* maximum size for hex file: %s bytes' %
+               self.get_board_conf('upload.maximum_size')))
 
     def processing_action(self, target, source, env):
         wp = open(str(target[0]), 'wb')
@@ -504,12 +507,12 @@ class ArduinoBuildContext(object):
                 if result:
                     prototypes[result.group(1)] = result.group(2)
 
-        for name in prototypes.iterkeys():
-            print '%s;' % name
+        for name in six.iterkeys(prototypes):
+            print('%s;' % name)
             wp.write('%s;\n' % name)
 
         for file in glob(os.path.realpath(os.curdir) + '/*' + self.sketch_ext):
-            print file, self.sketch_path
+            print(file, self.sketch_path)
             if not same_file(file, self.sketch_path):
                 wp.write('#line 1 "%s"\r\n' % file)
                 wp.write(open(file).read())
@@ -536,7 +539,7 @@ class ArduinoBuildContext(object):
         if env_dict is None:
             env_dict = {}
         env = self.get_env(**env_dict)
-        print env['CPPDEFINES']
+        print(env['CPPDEFINES'])
 
         # Convert sketch(.pde) to cpp
         env.Processing(hex_root.joinpath(self.TARGET + '.cpp'),
@@ -562,7 +565,7 @@ class ArduinoBuildContext(object):
         # Print Size
         # TODO: check binary size
         MAX_SIZE = self.get_board_conf('upload.maximum_size')
-        print ("maximum size for hex file: %s bytes" % MAX_SIZE)
+        print(("maximum size for hex file: %s bytes" % MAX_SIZE))
         env.BuildInfo(None, hex_path)
 
         if register_upload:
@@ -570,7 +573,7 @@ class ArduinoBuildContext(object):
                                                .dirname(self.AVR_BIN_PREFIX),
                                                'avrdude'),
                                   ' '.join(self.get_avrdude_options()))
-            print fuse_cmd
+            print(fuse_cmd)
 
             if self.RST_TRIGGER:
                 reset_cmd = '%s %s' % (self.RST_TRIGGER, self.ARDUINO_PORT)

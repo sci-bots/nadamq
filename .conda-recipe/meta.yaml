@@ -1,3 +1,8 @@
+{% if GIT_DESCRIBE_NUMBER > '0' %}
+{% set GIT_VERSION = GIT_DESCRIBE_TAG[1:] + '.post' + GIT_DESCRIBE_NUMBER %}
+{% else %}
+{% set GIT_VERSION = GIT_DESCRIBE_TAG[1:] %}
+{% endif %}
 # source will be downloaded prior to filling in jinja templates
 # Example assumes that this folder has setup.py in it
 source:
@@ -5,39 +10,45 @@ source:
 
 package:
   name: nadamq
-  version: {{ GIT_DESCRIBE_TAG[1:] }}
+  #: .. versionchanged:: 0.15
+  #:     Use git describe tag as version.  If not on a tag, append
+  #:     `.post<describe number>`.
+  version: {{ GIT_VERSION }}
 
 build:
   # If this is a new build for the same version, increment the build
   # number. If you do not include this key, it defaults to 0.
-  number: {{ GIT_DESCRIBE_NUMBER }}
+  number: 0
 
 requirements:
   build:
     - c-array-defs >=0.2.post3
     - cython
     - future
-    - libpython # [win]
-    - mingw # [win]
     - nose
     - numpy
-    # .. versionadded:: 0.14
+    #: .. versionadded:: 0.14
     - or-event
     - path_helpers
     - paver
-    - python
+    #: .. versionchanged:: 0.15
+    - python {{ python }}
     - ragel
     - scons
     - si-prefix
+    #: .. versionadded:: 0.15
+    - {{ compiler('c') }}  # [not py27]
+    #: .. versionadded:: 0.15
+    - msinttypes  # [py27]
 
   run:
-    - python
+    #: .. versionadded:: 0.15
+    - future
+    #: .. versionchanged:: 0.15
+    - python {{ python }}
     - c-array-defs >=0.2.post3
-    # ..versionchanged:: 0.12.1
-    #     See issue 2.
-    - mingw # [win]
     - numpy
-    # .. versionadded:: 0.14
+    #: .. versionadded:: 0.14
     - or-event
     - si-prefix
 
@@ -47,5 +58,5 @@ test:
     - nadamq.NadaMq
 
 about:
-  home: http://github.com/wheeler-microfluidics/nadamq
+  home: https://github.com/sci-bots/nadamq
   license: MIT

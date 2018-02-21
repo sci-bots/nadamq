@@ -1,5 +1,3 @@
-include RELEASE-VERSION
-include version.py
 include setup.py
 include paver-minilib.zip
 recursive-include nadamq src/packet_actions.cpp
@@ -10,3 +8,5 @@ recursive-include nadamq *.h
 recursive-include nadamq *.c
 recursive-exclude nadamq *.pyc
 recursive-exclude nadamq *~
+include versioneer.py
+include nadamq/_version.py

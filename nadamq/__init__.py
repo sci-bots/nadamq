@@ -7,6 +7,11 @@ from or_event import OrEvent
 import numpy as np
 import si_prefix as si
 
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
+
 
 def get_includes():
     r"""

@@ -18,7 +18,7 @@ from distutils.dep_util import newer
 # source files.
 sys.path.insert(0, path('.').abspath())
 import nadamq
-import version
+import versioneer
 
 here = path('.').abspath()
 include_dirs = [str(here.relpathto(p)) for p in nadamq.get_includes()]
@@ -43,7 +43,8 @@ else:
 pprint(extensions)
 
 setup(name='nadamq',
-      version=version.getVersion(),
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       description='Embedded-friendly transport layer, inspired by ZeroMQ',
       keywords='cython embedded zeromq transport packet parse',
       author='Christian Fobel',

@@ -22,6 +22,14 @@ build:
 
 requirements:
   build:
+    #: .. versionadded:: 0.15
+    - {{ compiler('c') }}
+    #: .. versionadded:: 0.15
+    - msinttypes
+
+  #: .. versionadded:: 0.15.2
+  #:     Fix `#4 <https://github.com/sci-bots/nadamq/issues/4>`_.
+  host:
     - c-array-defs >=0.2.post3
     - cython
     - future
@@ -31,21 +39,17 @@ requirements:
     - or-event
     - path_helpers
     - paver
-    #: .. versionchanged:: 0.15
-    - python {{ python }}
+    - si-prefix
     - ragel
     - scons
-    - si-prefix
-    #: .. versionadded:: 0.15
-    - {{ compiler('c') }}  # [not py27]
-    #: .. versionadded:: 0.15
-    - msinttypes  # [py27]
+    #: .. versionchanged:: 0.15
+    - python
 
   run:
     #: .. versionadded:: 0.15
     - future
     #: .. versionchanged:: 0.15
-    - python {{ python }}
+    - python
     - c-array-defs >=0.2.post3
     - numpy
     #: .. versionadded:: 0.14

@@ -1,18 +1,18 @@
 @echo off
 REM Generate `setup.py` from `pavement.py` definition.
-python -m paver generate_setup
+"%PYTHON%" -m paver generate_setup
 setlocal enableextensions
 md "%PREFIX%"\Library\include\Arduino\NadaMQ
 endlocal
 
 REM Generate `packet_actions.cpp` from ragel state machine source.
-python -m paver copy_packet_actions
+"%PYTHON%" -m paver copy_packet_actions
 REM Install source directory as Python package.
-python setup.py install --single-version-externally-managed --record record.txt
+"%PYTHON%" setup.py install --single-version-externally-managed --record record.txt
 if errorlevel 1 exit 1
 
 REM Run build tests
-python -m paver build_ext --inplace
+"%PYTHON%" -m paver build_ext --inplace
 nosetests -v nadamq\tests
 if errorlevel 1 exit 1
 

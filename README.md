@@ -1,5 +1,7 @@
 # nadamq
 
+[![Build status](https://ci.appveyor.com/api/projects/status/rp9tnteiugbacc9v?svg=true)](https://ci.appveyor.com/project/SciBots/nadamq)
+
 Low overhead packets with checksum validation.
 
 API includes `nadamq.NadaMq.cPacket` type and `nadamq.NadaMq.cPacketParser`.

@@ -24,8 +24,6 @@ requirements:
   build:
     #: .. versionadded:: 0.15
     - {{ compiler('c') }}
-    #: .. versionadded:: 0.15
-    - msinttypes
 
   #: .. versionadded:: 0.15.2
   #:     Fix `#4 <https://github.com/sci-bots/nadamq/issues/4>`_.
@@ -44,6 +42,10 @@ requirements:
     - scons
     #: .. versionchanged:: 0.15
     - python
+    #: .. versionadded:: 0.15
+    #: .. versionchanged:: 0.15.3
+    #:     Move to ``requirements.host``.
+    - msinttypes  # [win and py2k]
 
   run:
     #: .. versionadded:: 0.15

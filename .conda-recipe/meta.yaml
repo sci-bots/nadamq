@@ -24,6 +24,7 @@ requirements:
   build:
     #: .. versionadded:: 0.15
     - {{ compiler('c') }}
+    - ragel
 
   #: .. versionadded:: 0.15.2
   #:     Fix `#4 <https://github.com/sci-bots/nadamq/issues/4>`_.
@@ -38,7 +39,6 @@ requirements:
     - path_helpers
     - paver
     - si-prefix
-    - ragel
     - scons
     #: .. versionchanged:: 0.15
     - python

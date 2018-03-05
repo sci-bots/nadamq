@@ -1,5 +1,6 @@
 {% set PKG_NAME = 'nadamq' %}
 {% set LIB_NAME = 'NadaMQ' %}
+{% set MODULE_NAME = 'nadamq' %}
 
 {% if GIT_DESCRIBE_NUMBER > '0' %}
 {% set GIT_VERSION = GIT_DESCRIBE_TAG[1:] + '.post' + GIT_DESCRIBE_NUMBER %}
@@ -83,21 +84,30 @@ requirements:
     #:     Move to ``requirements.host``.
     - msinttypes  # [win and py2k]
 
-  run:
-    #: .. versionadded:: 0.15
-    - future
-    #: .. versionchanged:: 0.15
-    - python
-    - c-array-defs >=0.2.post3
-    - numpy
-    #: .. versionadded:: 0.14
-    - or-event
-    - si-prefix
-
-test:
-  imports:
-    - nadamq
-    - nadamq.NadaMq
+outputs:
+  - name: nadamq-dev
+    noarch: generic
+    files:
+      - share
+  - name: nadamq
+    files:
+      - Lib/site-packages/{{ MODULE_NAME }}
+    requirements:
+      run:
+        - {{ pin_subpackage('nadamq-dev', max_pin='x.x') }}
+        #: .. versionadded:: 0.15
+        - future
+        #: .. versionchanged:: 0.15
+        - python
+        - c-array-defs >=0.2.post3
+        - numpy
+        #: .. versionadded:: 0.14
+        - or-event
+        - si-prefix
+    test:
+      imports:
+        - nadamq
+        - nadamq.NadaMq
 
 about:
   home: https://github.com/sci-bots/nadamq

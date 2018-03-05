@@ -73,7 +73,7 @@ requirements:
     - or-event
     - path_helpers
     - paver
-    - platformio-helpers
+    - platformio-helpers >=0.6
     - ragel
     - si-prefix
     - scons

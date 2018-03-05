@@ -1,3 +1,6 @@
+{% set PKG_NAME = 'nadamq' %}
+{% set LIB_NAME = 'NadaMQ' %}
+
 {% if GIT_DESCRIBE_NUMBER > '0' %}
 {% set GIT_VERSION = GIT_DESCRIBE_TAG[1:] + '.post' + GIT_DESCRIBE_NUMBER %}
 {% else %}
@@ -19,6 +22,36 @@ build:
   # If this is a new build for the same version, increment the build
   # number. If you do not include this key, it defaults to 0.
   number: 0
+  script:
+    # Generate `setup.py` from `pavement.py` definition.
+    - python -m paver generate_setup
+    # Generate `packet_actions.cpp` from ragel state machine source.
+    - python -m paver copy_packet_actions
+    # Install source directory as Python package.
+    - python setup.py install --single-version-externally-managed --record record.txt
+    # Run build tests
+    - python -m paver build_ext --inplace
+    - nosetests -v nadamq\tests
+    # Copy Arduino library files to Conda Arduino library.
+    - python -c
+      "import os.path; import os; import shutil;
+      import platformio_helpers as pioh; import path_helpers as ph;
+      install_dir = pioh.conda_arduino_include_path().joinpath('{{ LIB_NAME }}');
+      install_dir.makedirs_p();
+      src_dir = ph.path(os.environ['SRC_DIR']);
+      {%- for file_i in ('NadaMQ.h', 'output_buffer.h', 'packet_handler.h') %}
+      src_file = src_dir.joinpath('Arduino', 'packet_handler', '{{ file_i }}');
+      shutil.copy2(src_file, install_dir.joinpath(src_file.name));
+      {%- endfor %}
+      {%- for file_i in ('BufferAllocator.h', 'Packet.h', 'PacketAllocator.h',
+                        'PacketHandler.h', 'PacketParser.h', 'PacketSocket.h',
+                        'PacketSocketEvents.h', 'PacketStream.h',
+                        'PacketWriter.h', 'SimpleCommand.h',
+                        'StreamPacketParser.h', 'crc-16.cpp', 'crc-16.h',
+                        'crc_common.cpp', 'crc_common.h', 'packet_actions.cpp') %}
+      shutil.copy2(src_dir.joinpath('{{ file_i }}'), install_dir.joinpath('{{ file_i }}'));
+      {%- endfor %}
+      "
 
 requirements:
   build:

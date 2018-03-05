@@ -84,6 +84,9 @@ requirements:
     #:     Move to ``requirements.host``.
     - msinttypes  # [win and py2k]
 
+# .. versionadded:: 0.17
+#     Split into `noarch` C++ header package and platform-specific Python
+#     package.
 outputs:
   - name: nadamq-dev
     noarch: generic

@@ -58,24 +58,24 @@ requirements:
   build:
     #: .. versionadded:: 0.15
     - {{ compiler('c') }}
-    - ragel
+    - ragel >=6.10
     - msinttypes  # [win and py2k]
 
   #: .. versionadded:: 0.15.2
   #:     Fix `#4 <https://github.com/sci-bots/nadamq/issues/4>`_.
   host:
-    - c-array-defs >=0.2.post3
+    - c-array-defs >=1.2
     - cython
     - future
     - nose
     - numpy
     #: .. versionadded:: 0.14
-    - or-event
-    - path_helpers
+    - or-event >=0.2.1
+    - path_helpers >=0.7
     - paver
-    - platformio-helpers >=0.6
-    - ragel
-    - si-prefix
+    - platformio-helpers >=0.7
+    - ragel >=6.10
+    - si-prefix >=1.2.1
     - scons
     #: .. versionchanged:: 0.15
     - python
@@ -102,11 +102,11 @@ outputs:
         - future
         #: .. versionchanged:: 0.15
         - python
-        - c-array-defs >=0.2.post3
+        - c-array-defs >=1.2
         - numpy
         #: .. versionadded:: 0.14
-        - or-event
-        - si-prefix
+        - or-event >=0.2.1
+        - si-prefix >=1.2.1
     test:
       imports:
         - nadamq

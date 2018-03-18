@@ -25,4 +25,4 @@ conda update -q conda
 conda install --yes conda-build anaconda-client nose
 
 # Create and activate new project environment
-conda create --name $env:APPVEYOR_PROJECT_NAME python
+conda create --name $env:APPVEYOR_PROJECT_NAME python anaconda-client

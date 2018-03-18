@@ -54,5 +54,7 @@ Get-ChildItem bld\*\*.tar.bz2 | `
     @{ n = 'Foldername'; e = { ($_.PSPath -split '[\\]')[-2] } },
     FullName | ForEach {
       echo "$($_.FullName.Trim()) -> artifacts\$($_.Foldername)-$($_.Name)"
+      # Upload to `nadamq` Anaconda Cloud channel
+      anaconda -t $env:anaconda_token upload -u nadamq $_.FullName.Trim()
       mv $($_.FullName.Trim()) artifacts\$($_.Foldername)-$($_.Name)
     }

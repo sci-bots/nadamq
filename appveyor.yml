@@ -18,6 +18,8 @@ init:
 
     Write-Host $env:PATH
 environment:
+  anaconda_token:
+    secure: ZpLQ+IMirVuHrEkZPevDFTZ4AeUuDtLm5d4KTCwgI5oIB5eJxP5OLDYFKwud7K89
   CONDA_EXTRA_CHANNELS: cfobel
   matrix:
   - PYTHON_VERSION: 3.6

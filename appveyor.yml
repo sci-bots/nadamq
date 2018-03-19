@@ -23,17 +23,17 @@ environment:
   CONDA_EXTRA_CHANNELS: cfobel
   matrix:
   - PYTHON_VERSION: 2.7
+    MINICONDA: C:\Miniconda-x64
+    PYTHON_ARCH: 64
+  - PYTHON_VERSION: 2.7
     MINICONDA: C:\Miniconda
     PYTHON_ARCH: 32
   - PYTHON_VERSION: 3.6
-    MINICONDA: C:\Miniconda36
-    PYTHON_ARCH: 32
-  - PYTHON_VERSION: 2.7
-    MINICONDA: C:\Miniconda-x64
-    PYTHON_ARCH: 64
-  - PYTHON_VERSION: 3.6
     MINICONDA: C:\Miniconda36-x64
     PYTHON_ARCH: 64
+  - PYTHON_VERSION: 3.6
+    MINICONDA: C:\Miniconda36
+    PYTHON_ARCH: 32
 install:
 - ps: .appveyor/install.ps1
 build_script:

@@ -17,6 +17,11 @@ $build_status = "Success"
 $env:project_directory = (Get-Item -Path ".\" -Verbose).FullName
 Write-Host "Project directory: $($env:project_directory)"
 
+if ($env:PYTHON_VERSION="2.7") {
+  if ($env:ARCH="32") { & "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86 }
+  if ($env:ARCH="64") { & "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64 }
+}
+
 # Build Package
 conda build .conda-recipe --dirty --croot bld
 $exit_code = $?

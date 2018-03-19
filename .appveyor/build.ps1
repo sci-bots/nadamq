@@ -18,7 +18,7 @@ $env:project_directory = (Get-Item -Path ".\" -Verbose).FullName
 Write-Host "Project directory: $($env:project_directory)"
 
 # Build Package
-conda build .conda-recipe --dirty --croot bld -m .conda-recipe\variants.yaml
+conda build .conda-recipe --dirty --croot bld
 $exit_code = $?
 echo $exit_code
 if (!$exit_code) { $build_status = "Failed Conda Build Stage" }

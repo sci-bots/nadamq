@@ -17,9 +17,9 @@ $build_status = "Success"
 $env:project_directory = (Get-Item -Path ".\" -Verbose).FullName
 Write-Host "Project directory: $($env:project_directory)"
 
-if ($env:PYTHON_VERSION="2.7") {
-  if ($env:ARCH="32") { & "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86 }
-  if ($env:ARCH="64") { & "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64 }
+if ($env:PYTHON_VERSION -eq "2.7") {
+  if ($env:ARCH -eq "32") { & "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86 }
+  if ($env:ARCH -eq "64") { & "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64 }
 }
 
 # Build Package
@@ -51,6 +51,16 @@ echo $build_status > BUILD_STATUS
 # Set exit code to 1 if package(s) weren't built.
 if (!$packages_built) { exit 1 }
 
+# Check for broken packages.
+Get-ChildItem bld\*\*.tar.bz2 | `
+  Select-Object Name, @{ n = 'Folder'; e = { Convert-Path $_.PSParentPath } },
+    @{ n = 'Foldername'; e = { ($_.PSPath -split '[\\]')[-2] } },
+    FullName | ForEach {
+      if ($_.Foldername -eq "broken") {
+        exit 1
+      }
+    }
+
 # Prepend platform (i.e., `win-32`, `win-64`, `noarch`) to each package filename
 # and collect package files in `artifacts` directory.
 md artifacts
@@ -59,7 +69,7 @@ Get-ChildItem bld\*\*.tar.bz2 | `
     @{ n = 'Foldername'; e = { ($_.PSPath -split '[\\]')[-2] } },
     FullName | ForEach {
       echo "$($_.FullName.Trim()) -> artifacts\$($_.Foldername)-$($_.Name)"
-      # Upload to `nadamq` Anaconda Cloud channel
+      # Upload to `nadamq` Anaconda Cloud channel (only non-broken packages).
       anaconda -t $env:anaconda_token upload -u nadamq $_.FullName.Trim()
       mv $($_.FullName.Trim()) artifacts\$($_.Foldername)-$($_.Name)
     }

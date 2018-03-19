@@ -51,6 +51,16 @@ echo $build_status > BUILD_STATUS
 # Set exit code to 1 if package(s) weren't built.
 if (!$packages_built) { exit 1 }
 
+# Check for broken packages.
+Get-ChildItem bld\*\*.tar.bz2 | `
+  Select-Object Name, @{ n = 'Folder'; e = { Convert-Path $_.PSParentPath } },
+    @{ n = 'Foldername'; e = { ($_.PSPath -split '[\\]')[-2] } },
+    FullName | ForEach {
+      if ($($_.Foldername)="broken") {
+        exit 1
+      }
+    }
+
 # Prepend platform (i.e., `win-32`, `win-64`, `noarch`) to each package filename
 # and collect package files in `artifacts` directory.
 md artifacts
@@ -59,7 +69,7 @@ Get-ChildItem bld\*\*.tar.bz2 | `
     @{ n = 'Foldername'; e = { ($_.PSPath -split '[\\]')[-2] } },
     FullName | ForEach {
       echo "$($_.FullName.Trim()) -> artifacts\$($_.Foldername)-$($_.Name)"
-      # Upload to `nadamq` Anaconda Cloud channel
+      # Upload to `nadamq` Anaconda Cloud channel (only non-broken packages).
       anaconda -t $env:anaconda_token upload -u nadamq $_.FullName.Trim()
       mv $($_.FullName.Trim()) artifacts\$($_.Foldername)-$($_.Name)
     }

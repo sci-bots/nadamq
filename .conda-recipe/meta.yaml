@@ -56,8 +56,6 @@ build:
 
 requirements:
   build:
-    #: .. versionadded:: 0.15
-    - {{ compiler('c') }}
     - ragel >=6.10
     - msinttypes  # [win and py2k]
 

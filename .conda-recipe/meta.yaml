@@ -92,6 +92,9 @@ outputs:
     noarch: generic
     files:
       - share
+    requirements:
+      run:
+        - c-array-defs >=1.3
   - name: nadamq
     files:
       - Lib/site-packages/{{ MODULE_NAME }}
@@ -102,7 +105,6 @@ outputs:
         - future
         #: .. versionchanged:: 0.15
         - python
-        - c-array-defs >=1.3
         - numpy
         #: .. versionadded:: 0.14
         - or-event >=0.2.1

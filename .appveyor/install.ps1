@@ -30,6 +30,7 @@ conda create --name $env:APPVEYOR_PROJECT_NAME python anaconda-client
 # Use patch (from `conda-build`) to support Appveyor Python 2.7 win-64 build.
 if ($env:ARCH -eq "x64") {
   conda install --yes curl 7za
+  activate
   # Download patch to support Appveyor Python 2.7 win-64 build.
   cmd /C curl -L -o conda-build-3.7.1.zip https://github.com/conda/conda-build/archive/3.7.1.zip
   # Extract patch.

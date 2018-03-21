@@ -24,5 +24,18 @@ conda install -n root -c pscondaenvs pscondaenvs
 conda update -q conda
 conda install --yes conda-build anaconda-client nose
 
-# Create and activate new project environment
-conda create --name $env:APPVEYOR_PROJECT_NAME python
+# Create new project environment
+conda create --name $env:APPVEYOR_PROJECT_NAME python anaconda-client
+
+# Use patch (from `conda-build`) to support Appveyor Python 2.7 win-64 build.
+if ($env:ARCH -eq "x64") {
+  conda install --yes curl 7za
+  activate
+  # Download patch to support Appveyor Python 2.7 win-64 build.
+  cmd /C curl -L -o conda-build-3.7.1.zip https://github.com/conda/conda-build/archive/3.7.1.zip
+  # Extract patch.
+  7za x .\conda-build-3.7.1.zip conda-build-3.7.1\ci\appveyor
+  # Apply patch.
+  & conda-build-3.7.1\ci\appveyor\setup_x64.bat
+  copy "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin\vcvars64.bat" "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin\amd64\vcvarsamd64.bat"
+}
